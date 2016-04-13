@@ -22,7 +22,7 @@ Install the following using the corresponding links
 
 Now install the following packages by going into Rstudio (or R) and typing:
 ```{r,eval=FALSE}
-install.packages(c('rjags'))
+install.packages('rjags')
 ```
 
 ### Step 3
