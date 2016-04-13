@@ -5,7 +5,7 @@ date: "May 2016"
 output: html_document
 ---
 
-Module pre-requisites can be found [here](https://rawgit.com/andrewcparnell/tsme_course/master/Prerequisites.html). All the raw files and code can be found [here](https://github.com/andrewcparnell/tsme_course). Click 'Download ZIP' near the top right if you want offline versions of everything.
+Module pre-requisites can be found [here](https://rawgit.com/andrewcparnell/tsme_course/master/Prerequisites.html). All the raw files and code can be found [here](https://github.com/andrewcparnell/tsme_course). Click 'Download ZIP' near the top right if you want offline versions of everything. A pre-course questionnaire is avialable [here](http://goo.gl/forms/uKokzhP39E).
 
 ## Tuesday 10th May
 
