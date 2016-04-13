@@ -1,4 +1,6 @@
-# About this course
+# Course: Time Series for Ecologists and Climatologists
+
+## About
 
 We  cover model-based time series analysis with a particular focus on applications in ecology and climatology. All methods are illustrated using the free, open-source software package R. Time Series data are ubiquitous in the physical sciences, and models for their behaviour enable scientists to understand temporal dynamics and predict future values.
 
