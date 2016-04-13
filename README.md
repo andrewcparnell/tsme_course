@@ -13,3 +13,7 @@ Research postgraduates, practicing academics in climatology, meteorology, conser
 ## Register
 
 To register for the course visit: [prstatistics.com](http://prstatistics.com)
+
+## Start the course
+
+You can start browsing the course by visiting the [timetable](https://rawgit.com/andrewcparnell/tsme_course/master/Timetable.html)
