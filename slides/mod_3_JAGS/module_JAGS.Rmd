@@ -1,0 +1,177 @@
+---
+title: 'Module 3: The JAGS software with simple examples'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+## Learning outcomes
+
+- LO 1
+- LO 2
+- LO 3
+
+## Simple example in JAGS {.smaller}
+
+In later modules we will start using JAGS to fit models like this. The code is much simpler than the previous R version:
+```{r,eval=FALSE}
+library(rjags)
+modelstring ='
+  model {
+    # Likelihood
+    x ~ dnorm(theta,1/pow(0.8,2))
+    # Prior
+    theta ~ dnorm(2.3,1/pow(0.5,2))
+  }
+'
+# Set up data
+data=list(x=3.1)
+# Run jags
+model=jags.model(textConnection(modelstring), data=data)
+output=coda.samples(model=model,variable.names=c("theta"), n.iter=1000)
+# Plot output
+plot(density(output[[1]]))
+```
+Beware that JAGS uses _precision_ (1/variance) rather than standard deviation in `dnorm`
+
+
+## Plot from JAGS {.smaller}
+
+```{r,include=FALSE}
+library(rjags)
+modelstring ='
+model {
+  x ~ dnorm(theta,1/pow(0.8,2))
+  theta ~ dnorm(2.3,1/pow(0.5,2))
+}
+'
+data=list(x=3.1)
+model=jags.model(textConnection(modelstring), data=data)
+output=coda.samples(model=model,variable.names=c("theta"), n.iter=10000)
+```
+
+```{r, echo=FALSE,fig.align='center'}
+plot(density(output[[1]]),main='Posterior for theta',xlab='theta',las=1)
+```
+
+Posterior mean is `r round(mean(output[[1]]),2)` seconds and standard deviation is `r round(sd(output[[1]]),2)` seconds. 
+
+## What are the assumptions involved in this example?
+
+- We've assumed that the normal distribution is appropriate for the likelihood and the prior
+- We've only observed one data point. What if we observed many?
+- We've assumed that the likelihood standard deviation is fixed at 0.8
+
+## A more complicated JAGS version
+
+```{r,eval=FALSE}
+modelstring ='
+  model {
+    # Likelihood
+    for(i in 1:n) { x[i] ~ dnorm(theta,1/pow(sd,2)) }
+    # Prior
+    theta ~ dnorm(2.3,1/pow(0.5,2))
+    sd ~ dunif(0,100)
+  }
+'
+# Set up data
+data=list(x=c(3.1,2.7,4.2,3.6),n=4)
+# Run jags
+model=jags.model(textConnection(modelstring), data=data)
+output=coda.samples(model=model,variable.names=
+                      c("theta","sd"), n.iter=1000)
+```
+Now have four data points, two parameters and a prior for each
+
+## What if the observations aren't normal? {.smaller}
+
+No problem! We just choose distributions which are appropriate for the type of data
+```{r,eval=FALSE}
+modelstring ='
+  model {
+    # Likelihood
+    for(i in 1:n) { 
+      x[i] ~ dgamma(alpha,beta) 
+    }
+    # Prior
+    alpha ~ dunif(0,100)
+    beta ~ dunif(0,100)
+    # Mean
+    mean <- alpha/beta
+  }
+'
+data=list(x=c(3.1,2.7,4.2,3.6),n=4)
+model=jags.model(textConnection(modelstring), data=data)
+output=coda.samples(model=model,variable.names=c("mean"),n.iter=1000)
+```
+
+## How do I specify the prior distribution?
+
+There are several choices when it comes to specifying prior distributions:
+
+- _Informative_, when there is information from a previous study, or other good external source, e.g $\theta \sim N(2.3,0.5^2)$
+- _Vague_, when there is only weak information, perhaps as to the likely range of the parameter e.g. $\theta \sim U(0,100)$
+- _Flat_, when there is no information at all about a parameter (very rare). In JAGS, write `theta ~ dflat()`
+
+Choosing the prior and choosing the likelihood are very similar problems
+
+## Choosing likelihoods and priors {.smaller}
+
+When creating Bayesian models it's helpful to know a lot of probability distributions. The ones we will use most are:
+
+Distribution  | Range         | Useful for:
+------------- | ------------- | --------------------------
+Normal, $N(\mu,\sigma^2)$        | $(-\infty,\infty$)  | A good default choice
+Uniform, $U(a,b)$  | $(a,b)$  | Vague priors when we only know the range of the parameter
+Binomial, $Bin(k,\theta)$ | $[0,k]$ | Count or binary data restricted to have an upper value
+Poisson, $Po(\lambda)$ | $[0,\infty)$ | Count data with no upper limit
+Gamma, $Ga(\alpha,\beta)$ | $(0,\infty)$ | Continuous data with a lower bound of zero
+Multivariate Normal, $MVN(\mu,\Sigma)$ | $(-\infty,\infty$) | Multivariate unbounded data with correlation between parameters/observations
+
+
+## Creating the posterior distribution
+
+- In the very simple example, I was able to calculate the posterior distribution in just a couple of lines of `R` code 
+- When we have lots of parameters, and complicated prior distributions, we have to resort to _simulation_
+- This means that we obtain _samples_ from the posterior distribution rather than creating the probability distribution directly
+- JAGS uses Markov chain Monte Carlo (MCMC) to create these samples. We will talk about this a bit more in later lectures/discussion
+
+## Summarising the posterior distribution
+
+- Because we obtain samples from the posterior distribution, we can create any quantity we like from them
+- e.g. we can obtain the mean or standard deviation simply from combining the samples together
+- We can create quantiles e.g. 50% for the median
+- We can create a Bayesian _credible interval_ (CI) by calculating lower and upper quantiles
+- When the posterior distribution is messy (e.g. multi-modal) we can use a _highest posterior density_ (HPD) region
+
+## Example: {.smaller}
+
+```{r,include=FALSE}
+library(rjags)
+modelstring ='
+model {
+  x ~ dnorm(theta,1/pow(0.8,2))
+  theta ~ dnorm(2.3,1/pow(0.5,2))
+}
+'
+data=list(x=3.1)
+model=jags.model(textConnection(modelstring), data=data)
+output=coda.samples(model=model,variable.names=c("theta"), n.iter=10000)
+```
+
+From the earlier simple example. First 5 posterior samples
+```{r}
+output[[1]][1:5]
+```
+The mean and standard deviation: 
+```{r}
+c(mean(output[[1]]),sd(output[[1]]))
+```
+A 95% credible interval
+```{r}
+quantile(output[[1]],probs=c(0.025,0.975))
+```
