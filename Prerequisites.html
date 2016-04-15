@@ -128,23 +128,25 @@ $(document).ready(function () {
 <div id="step-2" class="section level3">
 <h3>Step 2</h3>
 <p>Now install the following packages by going into Rstudio (or R) and typing:</p>
-<pre class="r"><code>install.packages('rjags')</code></pre>
+<pre class="r"><code>install.packages('R2jags')</code></pre>
 </div>
 <div id="step-3" class="section level3">
 <h3>Step 3</h3>
 <p>Check that everything works by going to a command line terminal and typing <code>jags</code>. If it opens successfully type <code>exit</code>.</p>
 <p>Now go into R and copy and paste the following text:</p>
-<pre class="r"><code>library(rjags)
-modelstring=&quot;
+<pre class="r"><code>library(R2jags)
+model_code=&quot;
 model {
   y ~ dnorm(mu,1)
   mu ~ dnorm(0,1)
 }
 &quot;
-model=jags.model(textConnection(modelstring),data=list(y=1))
-output = coda.samples(model,n.iter=1000,variable.names='mu') # Burnin period
-plot(output)</code></pre>
-<p>This should produce a two-panel plot.</p>
+model=jags(data=list(y=1),
+           model.file=textConnection(model_code),
+           parameters.to.save = 'mu',
+           n.chains=1)
+plot(model)</code></pre>
+<p>This should produce a plot.</p>
 </div>
 <div id="troubleshooting" class="section level3">
 <h3>Troubleshooting</h3>
