@@ -71,12 +71,12 @@ model
   }
 
   # Priors
-  alpha ~ dnorm(0.0,0.01) 
+  alpha ~ dnorm(0.0,0.01)
   for (i in 1:p) {
-    phi[i] ~ dnorm(0.0,0.01) 
+    phi[i] ~ dnorm(0.0,0.01)
   }
   tau <- 1/pow(sigma,2) # Turn precision into standard deviation
-  sigma ~ dunif(0.0,10.0) 
+  sigma ~ dunif(0.0,10.0)
 }
 '
 
@@ -84,11 +84,11 @@ model
 model_data = list(T = T, y = y, p = 1)
 
 # Choose the parameters to watch
-model_parameters =  c("alpha","phi","sigma")  
+model_parameters =  c("alpha","phi","sigma")
 
 # Run the model
-model_run = jags(data = model_data, 
-                 parameters.to.save = model_parameters, 
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
                  model.file=textConnection(model_code),
                  n.chains=4, # Number of different starting positions
                  n.iter=1000, # Number of iterations
@@ -98,8 +98,8 @@ model_run = jags(data = model_data,
 # Try the AR(p) version
 model_data_2 = list(T = T, y = y2, p = p)
 
-model_run_2 = jags(data = model_data_2, 
-                 parameters.to.save = model_parameters, 
+model_run_2 = jags(data = model_data_2,
+                 parameters.to.save = model_parameters,
                  model.file=textConnection(model_code),
                  n.chains=4, # Number of different starting positions
                  n.iter=1000, # Number of iterations
@@ -120,17 +120,21 @@ hadcrut = read.csv('data/hadcrut.csv')
 head(hadcrut)
 with(hadcrut,plot(Year,Anomaly,type='l'))
 
+# Look at the ACF/PACF
+acf(hadcrut$Anomaly)
+pacf(hadcrut$Anomaly)
+
 # Set up the data
 real_data = with(hadcrut,
-                 list(T = nrow(hadcrut), 
-                      y = hadcrut$Anomaly, 
+                 list(T = nrow(hadcrut),
+                      y = hadcrut$Anomaly,
                       p = 1))
 
 # Run the model
-real_data_run = jags(data = real_data, 
-                     parameters.to.save = model_parameters, 
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
                      model.file=textConnection(model_code),
-                     n.chains=4, 
+                     n.chains=4,
                      n.iter=1000,
                      n.burnin=200,
                      n.thin=2)
@@ -160,10 +164,10 @@ for (i in 2:length(future_values)) {
 }
 
 # Plot these all together
-with(hadcrut, 
-     plot(Year, 
-          Anomaly, 
-          type='l', 
+with(hadcrut,
+     plot(Year,
+          Anomaly,
+          type='l',
           xlim=c(min(hadcrut$Year),T_future),
           ylim=range(c(hadcrut$Anomaly,future_values))))
 lines(((max(hadcrut$Year)+1):T_future),future_values,col='red')
@@ -172,5 +176,5 @@ lines(((max(hadcrut$Year)+1):T_future),future_values,col='red')
 # Other tasks -------------------------------------------------------------
 
 # 1) Try changing the values of phi2 for the simulated AR(p) model. What happens to the time series when some of these values get bigger?
-# 2) Above we have only fitted the HadCrut data with an AR(1) model. You might like to try and fit it with AR(2), AR(3), etc models and see what happens to the fits 
+# 2) Above we have only fitted the HadCrut data with an AR(1) model. You might like to try and fit it with AR(2), AR(3), etc models and see what happens to the fits
 # 3) (Harder) See if you can create the fitted values by sampling from the posterior distribution of alpha and phi, and plotting an envelope/ensemble of lines, just like in the linear regression example
