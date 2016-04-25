@@ -35,7 +35,7 @@ library(R2jags)
 T = 100
 alpha = 0
 theta = 1 # Note if theta = 0 you end up with BM
-sigma = 1
+sigma = 0.1
 y = rep(NA, T)
 y[1] = 0
 set.seed(123)
@@ -82,8 +82,11 @@ model_run = jags(data = model_data,
 # Simulated results -------------------------------------------------------
 
 # Results and output of the simulated example, to include convergence checking, output plots, interpretation etc
-print(model_run)
+print(model_run) # Model seems to struggle to estimate both theta and alpha
 plot(model_run)
+
+# Check correlation of parameters
+cor(model_run$BUGSoutput$sims.matrix) # Not that strong a correlation between theta and alpha
 
 # Real example ------------------------------------------------------------
 
