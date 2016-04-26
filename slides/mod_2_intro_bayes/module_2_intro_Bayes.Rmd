@@ -9,6 +9,13 @@ output:
   beamer_presentation: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('latex2exp')
+library(latex2exp)
+```
+
+
 ## Learning outcomes
 
 - Know the difference between Frequentist and Bayesian statistics
@@ -30,7 +37,15 @@ $$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
 - We use Bayes' interpretation of the theorem to get the _posterior probability distribution_, the probability of the unobserved given the observed
 - Used now in almost all areas of statistical application (finance, medicine, environmetrics, gambling, etc, etc)
 
-## What is Bayes' theorem?
+## Why Bayes?
+
+The Bayesian approach has numerous advantages:
+
+- It's easier to build complex models and to analyse the parameters you want directly
+- We automatically obtain the best parameter estimates and their uncertainty from the posterior samples
+- It allows us to get away from (terrible) null hypothesis testing and $p$-values
+
+## Bayes theorem in english
 
 Bayes' theorem can be written in words as:
 
@@ -42,7 +57,7 @@ Each of the three terms _posterior_, _likelihood_, and _prior_ are _probability 
 
 In a Bayesian model, every item of interest is either data (which we will write as $x$) or parameters (which we will write as $\theta$). Often the parameters are divided up into those of interest, and other _nuisance parameters_
 
-## Bayes' theorem in more detail
+## Bayes theorem in maths
 
 Bayes' equation is usually written mathematically as:
 $$p(\theta|x) \propto p(x|\theta) \times p(\theta)$$
@@ -53,25 +68,22 @@ $$p(\theta|x) = \frac{p(x|\theta) \times p(\theta)}{p(x)}$$
 - The _likelihood_ is the probability of observing the data given the parameters (unknowns)
 - The _prior_ represents external knowledge about the parameters
 
+## Example 1: one parameter to estimate
 
-## A simple example
+- Let's suppose we want to estimate an unknown parameter $\theta$ which represents climate sensitivity
+- A set of previous studies have estimated climate sensitivity to be $3\pm 1.5^\circ C/W/m^2$ where $1.5$ represents one standard deviation. We will assume this is normally distributed and use this as a prior distribution, so $\theta \sim N(3, 1.5^2)$
+- We run a new climate model which gives us an estimate of $x=4.2$. Let's suppose that we know from previously running this model that the standard deviations of these runs is 2.5, 
+- Our likelihood states that, if we knew $\theta$, the value $x$ would be normally distributed around $\theta$ with standard deviation 2.5, so $x \sim N(\theta, 2.5^2)$
+- We now need to use Bayes theorem to estimate the posterior distribution of climate sensitivity given our new run
 
-- An ecologist listens for the calls of the southern brown tree frog (_Litoria ewingi_)
-- She wants to know the mean length of the calls
-- We will assume that the standard deviation of the calls is known to be 0.8 seconds
-- She hears a call of length 3.1 seconds
-- A study conducted the previous year estimated the mean to be 2.3 seconds with standard error 0.5 seconds
-
-If we assume that the calls she hears are normally distributed then $x$ follows a normal distribution with mean $\theta$ and standard deviation 0.8s, written $x|\theta \sim N(\theta,0.8^2)$. The prior distribution is $\theta \sim N(2.3,0.5^2)$.
-
-## Simple example (continued) {.smaller}
+## Example 1 continued
 
 ```{r,echo=FALSE,fig.align='center'}
-theta = seq(0,6,length=100)
-likelihood = dnorm(3.1,mean=theta,sd=0.8)
-prior = dnorm(theta,mean=2.3,sd=0.5)
+theta = seq(-2, 10, length = 100)
+likelihood = dnorm(4.2, mean = theta, sd = 2.5)
+prior = dnorm(theta, mean = 3, sd = 1.5)
 par(mar=c(3,3,2,1), mgp=c(2,.7,0), tck=-.01,las=1)
-plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.06),xlab='theta (mean length of call in seconds)')
+plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.04),xlab=TeX('$\\theta$ (climate sensitivity)'))
 lines(theta,prior/sum(prior),col='red')
 posterior = prior*likelihood
 lines(theta,posterior/sum(posterior),col='blue')
@@ -79,48 +91,221 @@ legend('topright',legend=c('Likelihood','Prior','Posterior'),col=c('black','red'
 true_post = posterior/sum(posterior)
 ```
 
-Note: posterior mean is `r round(sum(theta*true_post),2)` seconds and standard deviation is `r round(sqrt(sum(theta^2*true_post)-sum(theta*true_post)^2),2)` seconds. 
+Note: posterior mean is `r round(sum(theta*true_post),2)` $^\circ C/W/m^2$  and standard deviation is `r round(sqrt(sum(theta^2*true_post)-sum(theta*true_post)^2),2)` $^\circ C/W/m^2$ 
 
-## Simple example (continued)
+## Example 1 code
 
-Code used to produce previous plot:
 ```{r,eval=FALSE}
 # Create grid for theta
-theta = seq(0,6,length=100)
+theta = seq(-2, 10, length = 100)
 # Evalutate prior, likelihood and posterior
-prior = dnorm(theta,mean=2.3,sd=0.5)
-likelihood = dnorm(3.1,mean=theta,sd=0.8)
-posterior = prior*likelihood
+prior = dnorm(theta, mean = 3, sd = 1.5)
+likelihood = dnorm(4.2, mean = theta, sd = 2.5)
+posterior = prior * likelihood
 # Produce plot
-plot(theta,likelihood/sum(likelihood),type='l',
-     ylab='Probability',ylim=c(0,0.06))
-lines(theta,prior/sum(prior),col='red')
-lines(theta,posterior/sum(posterior),col='blue')
-legend('topright',legend=c('Likelihood','Prior',
-                           'Posterior'),
-       col=c('black','red','blue'),lty=1)
+plot(theta, likelihood / sum(likelihood), type = 'l',
+     ylab = 'Probability', ylim = c(0, 0.04))
+lines(theta, prior / sum(prior), col = 'red')
+lines(theta, posterior / sum(posterior), col = 'blue')
+legend('topright', 
+       legend = c('Likelihood', 'Prior', 'Posterior'),
+       col = c('black', 'red', 'blue'), 
+       lty = 1)
 ```
 
+## Understanding the different parts of a Bayesian model
+
+- The likelihood is the probability of observing the data given the parameters. It represents the _data generating process_
+- The prior is the probability distribution of the parameters independent from the current data you have been generated. It often requires care (and philosophy) to choose. More on this later
+- The posterior is the probability distribution of the parameters given the data. It is always the target of our inference. 
+
+In a Bayesian model we 'simply' specify the likelihood and the prior. JAGS (or other software) will calculate the posterior for us
+
+## Lots of probability distributions {.smaller}
+
+Almost always, the likelihood and prior can be picked from the standard probability distributions:
+
+Distribution  | Range of parameter        | Useful for:
+------------- | --------- | --------------------------
+Normal, $N(\mu,\sigma^2)$        | $(-\infty,\infty$)  | A good default choice
+Uniform, $U(a,b)$  | $(a,b)$  | Vague priors when we only know the range of the parameter
+Binomial, $Bin(k,\theta)$ | $[0,k]$ | Count or binary data restricted to have an upper value
+Poisson, $Po(\lambda)$ | $[0,\infty)$ | Count data with no upper limit
+Gamma, $Ga(\alpha,\beta)$ | $(0,\infty)$ | Continuous data with a lower bound of zero
+Multivariate Normal, $MVN(\mu,\Sigma)$ | $(-\infty,\infty$) | Multivariate unbounded data with correlation between parameters/observations
+
+<br>
+The more probability distributions you know the better you will be at Bayes!
+
+## Choosing a likelihood and a prior
+
+- Both can be hard choices
+- For the likelihood, think about the range of the data values. Can they be positive and negative? Are they likely to be skewed? Are they counts or continuous numbers? Are there likely to be outliers?
+- For the prior, think about what previous information is available. If very little information is available use a _vague_ prior, such as $N(0,100)$. If there are previous studies, use values from these. If there are experts around, ask them.
+- If you can, use an _informative_ prior
+
+## Example 1 (continued): Multiple observations and parameters
+
+- Let's make example 1 more realistic
+- The prior on climate sensitivity is the same as before: $\theta \sim N(3, 1.5^2)$
+- Suppose now we have four new runs from climate models, so $x_1 = 4.2, x_2 = 1.6, x_3 = 6.7, x_4 = 5.8$
+- We're not going to pretend that we know the true standard deviation of the runs any more so we have two parameters to estimate, the true climate sensitivity ($\theta$), and the variability of our climate model runs ($\sigma$). Write this likelihood as $x \sim N(\theta, \sigma^2)$. 
+- We now also need a prior for $\sigma$. Suppose we have little information here, so we will use the vague prior $\sigma \sim U(0,10)$
+- We compute a _joint posterior distribution_ of both $\theta$ and $\sigma$ given the data
+
+## Example 1 (continued): posterior distribution
+
+```{r,echo=FALSE,include=FALSE}
+library(R2jags)
+model_code = '
+model
+{
+  # Likelihood
+  for (i in 1:N) {
+    y[i] ~ dnorm(theta, tau)
+  }
+  # Priors
+  theta ~ dnorm(3, 1/pow(1.5, 2)) 
+  tau <- 1/pow(sigma,2)
+  sigma ~ dunif(0.0,10.0) 
+}
+'
+
+# Set up the data
+model_data = list(N = 4, y = c(4.2, 1.6, 6.7, 5.8))
+
+# Choose the parameters to watch
+model_parameters =  c("theta","sigma")  
+
+# Run the model
+model_run = jags(data = model_data, 
+                 parameters.to.save = model_parameters, 
+                 model.file=textConnection(model_code),
+                 n.chains=4, # Number of different starting positions
+                 n.iter=10000, # Number of iterations
+                 n.burnin=2000, # Number of iterations to remove at start
+                 n.thin=8) # Amount of thinning
+
+theta_post = model_run$BUGSoutput$sims.list$theta
+sigma_post = model_run$BUGSoutput$sims.list$sigma
+```
+```{r, echo=FALSE,fig.align='center',fig.width=10}
+par(mfrow=c(1,2))
+plot(density(theta_post), xlab = TeX('$\\theta$'),las = 1, main ='')
+plot(density(sigma_post), xlab = TeX('$\\sigma$'),las = 1, main ='')
+par(mfrow=c(1,1))
+```
+Posterior mean of $\theta$ is now `r round(mean(theta_post),2)` $^\circ C/W/m^2$  and standard deviation is `r round(sd(theta_post),2)` $^\circ C/W/m^2$ 
+
+## Showing your module
+
+- Often all you need to do to describe a Bayesian model is define your notation, write down your likelihood and your prior
+- For the example on the previous slide:
+$$\mbox{Likelihood}: x_i \sim N(\theta, \sigma^2), i=1,\ldots,N$$
+$$\mbox{Priors}: \theta \sim N(3.15, 1.5^2), \sigma \sim U(0, 10)$$
+
+- Note that it's very easy to simulate data values from this model:
+```{r, eval=FALSE}
+sigma = runif(1, 0, 10)
+theta = rnorm(1, 3.15, 1.5)
+x = rnorm(1, theta, sigma)
+```
+
+- We can run this repeatedly. If the data look 'reasonable' then we know that our prior and likelihood are well chosen
+
+## Posterior computation in JAGS {.smaller}
+
+- Here is the JAGS code to calculate the posterior distribution:
+```
+model
+{
+  # Likelihood
+  for (i in 1:N) {
+        y[i] ~ dnorm(theta, tau)
+  }
+  # Priors
+  theta ~ dnorm(3, 1/pow(1.5, 2)) 
+  tau <- 1/pow(sigma,2)
+  sigma ~ dunif(0.0,10.0) 
+}
+```
+
+- It looks a lot like R code, but there are a few key differences:
+
+    - You must use `<-` for assignment and `~` for the likelihood and the prior
+    - The `dnorm` function in JAGS uses _precision_ (1/variance) rather than standard deviation
+    - I always transform the precision back into a standard deviation and put the prior on the standard deviation
+
+## Calculating the posterior vs sampling from it
+
+- There are two ways to get at a posterior:
+
+    1. Calculate it directly using hard maths
+    2. Use a simulation method
+
+- Number 1 is impractical once you move beyond a few parameters, so number 2 is used by almost everybody
+- This means that we create _samples_ from the posterior distribution. Here are three samples from the previous example:
+```{r,echo=FALSE}
+head(model_run$BUGSoutput$sims.matrix[,c(2:3)],3)
+```
+- We often create thousands of posterior samples to represent the posterior distribution
+
+## Things you can do with posterior samples
+
+- Create histograms or density plots:
+- Individual summaries such as means, standard deviations, and quantiles (e.g. 95% confidence intervals)
+- Joint summaries such as scatter plots or correlations
+- Transformations such as logs/exponents, squares/square roots, etc
+
+The posterior distribution will usually be stored in a matrix where each row is a sample, and each column is a different parameter. Having the posterior distribution enables you to get at exactly the quantities you are interested in
+
+## Summary so far: for and against Bayes
+
+For:
+- A Bayesian model can be simply displayed as a likelihood and a prior. Everything is explicit
+- JAGS finds the posterior distribution for us so we don't need to do any maths
+- We can get exactly the quantity we are interested in, the probability distribution of our unknowns given our knowns
+
+Against:
+- It can be hard to create a prior distribution (and a likelihood)
+- Not having p-values can make papers harder to publish (but this is changing)
+
+## Example 1 (continued again): hierarchical version
+
+- The likelihood we used previously, $x_i \sim N(\theta, \sigma^2)$ states that each model run (perhaps from separate GCMs) is providing evidence for _one_ climate sensitivity parameter. Is this realistic?
+- A slightly more realistic model would be $x_i \sim N(\theta_i, \sigma^2)$ where each climate model has its _own climate sensitivity parameter_
+- We can't fit this model because we don't have enough information to estimate a parameter from 1 data point from each climate model. We instead put a _prior_ such that $\theta_i ~ \sim(\theta_0,\sigma_0^2)$ and can put further prior distributions on $\theta_0$ and $\sigma_0$
+- We can now estimate each climate model's own climate sensitivity ($\theta_i$) and the overall climate sensitivity $\theta_0$
+- This is known as a hierarchical model
 
 
-## Why is this better?
+## Bayesian time series, some general notation
 
-The Bayesian approach has numerous advantages:
+Throughout this course we use the following general notation:
 
-- It's easier to build complex models and to analyse the parameters you want directly
-- We automatically obtain the best parameter estimates and their uncertainty from the posterior samples
-- It allows us to get away from (terrible) null hypothesis testing and $p$-values
+  - Roman letters for data, Greek for parameters
+  - $y_t$ for a the time series values we're interested in modelling at time $t$. 
+  - $x$ for explanatory variables
+  - $\theta, \phi, ...$ for unknown parameters
+  - $\sigma$ for parameters representing standard deviations
 
-## Some further reading
+There are a few exceptions later in the course (e.g. state-space models)
 
-- The Bayesian bible: Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2013). _Bayesian Data Analysis_, Third Edition. CRC Press.
-- The MCMC bible: Brooks, S., Gelman, A., Jones, G., & Meng, X. (2011). _Handbook of Markov Chain Monte Carlo_. CRC Press.
-- Something simpler: McCarthy, M. A. (2007). _Bayesian Methods for Ecology_. Cambridge University Press.
+## General tips: 
+
+- Even if you lots of disparate data, try to build one model for all it. You'll be able to _borrow strength_ from the data (e.g. in a hierarchical model) and reduce the uncertainty in your parameter estimates
+
+- Try your hardest to use informative priors, and always justify the values you use (especially when trying to publish)
+
+- Check your model. Many of the usual requirements from traditional statistics (e.g. residual checks) are still relevant in the Bayesian world
 
 ## Summary
 
-- Bayesian statistical models involve a likelihood and a prior. These both need to be carefully chosen. From these we create a posterior distribution
-- The likelihood represents the information about the data generating process, the prior represents information about the unknown parameters
+- Bayesian statistical models involve a _likelihood_ and a _prior_. These both need to be carefully chosen. From these we create a posterior distribution
+
+- The likelihood represents the information about the data generating process; the prior information about the unknown parameters
+
 - We usually create and analyse samples from the posterior probability distribution of the unknowns (the parameters) given the knowns (the data)
-- From the posterior distribution we can create means, medians, standard deviations, credible intervals, etc
+
+- From the posterior distribution we can create means, medians, standard deviations, credible intervals, etc, from samples we take using e.g. JAGS
 

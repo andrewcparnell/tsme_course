@@ -46,7 +46,7 @@ Slides:
 17. The danger of vague priors
 18. Replication in Science and the horror of p-values
 19. Bayesian time series, some general notation
-S20. General tips: build one model for all the data, use informative priors, check your model
+20. General tips: build one model for all the data, use informative priors, check your model
 
 ------
 

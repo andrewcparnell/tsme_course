@@ -3,24 +3,24 @@
 # Fitting a linear regression in JAGS
 # Andrew Parnell
 
-# In this code we generate some data from a simple linear regression model and fit is using jags. We then intepret the output. 
+# In this code we generate some data from a simple linear regression model and fit is using jags. We then intepret the output.
 
 # Some boiler plate code to clear the workspace, set the working directory, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
+#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
 
 # Description of the Bayesian model fitted in this file
 # Notation:
-# y_i = repsonse variable for observation i=1,..,N
-# x_i = explanatory variable for obs i
+# y_t = repsonse variable for observation t=1,..,N
+# x_t = explanatory variable for obs t
 # alpha, beta = intercept and slope parameters to be estimated
 # sigma = residual standard deviation
 
 # Likelihood:
-# y_i ~ N(alpha + beta * x[i], sigma^2)
+# y_t ~ N(alpha + beta * x[i], sigma^2)
 # Prior
 # alpha ~ N(0,100) - vague priors
 # beta ~ N(0,100)
@@ -29,14 +29,14 @@ library(R2jags)
 # Simulate data -----------------------------------------------------------
 
 # Some R code to simulate data from the above model
-N = 100
+T = 100
 alpha = 2
 beta = 3
 sigma = 1
 # Set the seed so this is repeatable
 set.seed(123)
-x = sort(runif(N, 0, 10)) # Sort as it makes the plotted lines neater
-y = rnorm(N, mean = alpha + beta * x, sd = sigma)
+x = sort(runif(T, 0, 10)) # Sort as it makes the plotted lines neater
+y = rnorm(T, mean = alpha + beta * x, sd = sigma)
 
 # Also creat a plot
 plot(x, y)
@@ -50,27 +50,27 @@ model_code = '
 model
 {
   # Likelihood
-  for (i in 1:N) {
-    y[i] ~ dnorm(alpha + beta * x[i],tau)
+  for (t in 1:T) {
+    y[t] ~ dnorm(alpha + beta * x[t],tau)
   }
-  
+
   # Priors
-  alpha ~ dnorm(0.0,0.01) 
-  beta ~ dnorm(0.0,0.01) 
+  alpha ~ dnorm(0.0,0.01)
+  beta ~ dnorm(0.0,0.01)
   tau <- 1/pow(sigma,2) # Turn precision into standard deviation
-  sigma ~ dunif(0.0,10.0) 
+  sigma ~ dunif(0.0,10.0)
 }
 '
 
 # Set up the data
-model_data = list(N = N, y = y, x = x)
+model_data = list(T = T, y = y, x = x)
 
 # Choose the parameters to watch
-model_parameters =  c("alpha","beta","sigma")  
+model_parameters =  c("alpha","beta","sigma")
 
 # Run the model
-model_run = jags(data = model_data, 
-                 parameters.to.save = model_parameters, 
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
                  model.file=textConnection(model_code),
                  n.chains=4, # Number of different starting positions
                  n.iter=1000, # Number of iterations
@@ -113,15 +113,15 @@ with(sea_level,plot(year_AD,sea_level_m))
 
 # Set up the data
 real_data = with(sea_level,
-                  list(N = nrow(sea_level), 
-                       y = sea_level_m, 
+                  list(T = nrow(sea_level),
+                       y = sea_level_m,
                        x = year_AD))
 
 # Run the model
-real_data_run = jags(data = real_data, 
-                 parameters.to.save = model_parameters, 
+real_data_run = jags(data = real_data,
+                 parameters.to.save = model_parameters,
                  model.file=textConnection(model_code),
-                 n.chains=4, 
+                 n.chains=4,
                  n.iter=1000,
                  n.burnin=200,
                  n.thin=2)
@@ -151,7 +151,7 @@ alpha_post = real_data_run$BUGSoutput$sims.list$alpha
 beta_post = real_data_run$BUGSoutput$sims.list$beta
 age_grid = seq(1880, 2010, by = 10)
 post_lines = matrix(NA,
-                    ncol = length(age_grid), 
+                    ncol = length(age_grid),
                     nrow = length(alpha_post))
 
 # Now loop through each posterior value and get the fitted line
@@ -163,12 +163,12 @@ for (i in 1:nrow(post_lines)) {
 # We can plot them - here I'm plotting 50 random ones
 with(sea_level,plot(year_AD,sea_level_m))
 for (i in sample(1:nrow(post_lines),50)) {
-  lines(age_grid, post_lines[i,], col = i)  
+  lines(age_grid, post_lines[i,], col = i)
 }
 
 # Or we can summarise them
-post_lines_summary = apply(post_lines, 
-                           2, 
+post_lines_summary = apply(post_lines,
+                           2,
                            'quantile',
                            probs = c(0.025,0.5,0.975))
 

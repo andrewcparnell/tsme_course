@@ -4,7 +4,7 @@
 # Andrew Parnell
 
 # In this file we fit a Bayesian Generalised Linear Model (GLM) in the form
-# of a logistic regression. 
+# of a logistic regression.
 
 # Some boiler plate code to clear the workspace, set the working directory, and load in required packages
 rm(list=ls()) # Clear the workspace
@@ -15,19 +15,19 @@ library(boot) # Package contains the logit transform
 
 # Description of the Bayesian model fitted in this file
 # Notation:
-# y_i = binomial (often binary) response variable for observation i=1,...,N
-# x_{1i} = first explanatory variable for observation i
-# x_{2i} = second " " " " " " " " "
-# p_i = probability of y_i being 1 for observation i
+# y_t = binomial (often binary) response variable for observation t=1,...,N
+# x_{1t} = first explanatory variable for observation t
+# x_{2t} = second " " " " " " " " "
+# p_t = probability of y_t being 1 for observation t
 # alpha = intercept term
 # beta_1 = parameter value for explanatory variable 1
 # beta_2 = parameter value for explanatory variable 2
 
 # Likelihood
-# y_i ~ Binomial(K,p_i), or Binomial(1,p_i) if binary
-# logit(p_i) = alpha + beta_1 * x_1[i] + beta_2 * x_2[i]
-# where logit(p_i) = log( p_i / (1 - p_i ))
-# Note that p_i has to be between 0 and 1, but logit(p_i) has no limits
+# y_t ~ Binomial(K,p_t), or Binomial(1,p_t) if binary
+# logit(p_t) = alpha + beta_1 * x_1[t] + beta_2 * x_2[t]
+# where logit(p_i) = log( p_t / (1 - p_t ))
+# Note that p_t has to be between 0 and 1, but logit(p_t) has no limits
 
 # Priors - all vague
 # alpha ~ normal(0,100)
@@ -37,16 +37,16 @@ library(boot) # Package contains the logit transform
 # Simulate data -----------------------------------------------------------
 
 # Some R code to simulate data from the above model
-N = 100
+T = 100
 set.seed(123)
-x_1 = sort(runif(N,0,10))
-x_2 = sort(runif(N,0,10))
+x_1 = sort(runif(T,0,10))
+x_2 = sort(runif(T,0,10))
 alpha = 1
 beta_1 = 0.2
 beta_2 = -0.5
 logit_p = alpha + beta_1 * x_1 + beta_2 * x_2
 p = inv.logit(logit_p)
-y = rbinom(N,1,p)
+y = rbinom(T,1,p)
 
 # Have a quick look at the effect of x_1 and x_2 on y
 plot(x_1,y)
@@ -59,32 +59,32 @@ model_code = '
 model
 {
   # Likelihood
-  for (i in 1:N) {
-    y[i] ~ dbin(p[i], K)
-    logit(p[i]) <- alpha + beta_1 * x_1[i] + beta_2 * x_2[i]
+  for (t in 1:T) {
+    y[t] ~ dbin(p[t], K)
+    logit(p[t]) <- alpha + beta_1 * x_1[t] + beta_2 * x_2[t]
   }
-  
+
   # Priors
-  alpha ~ dnorm(0.0,0.01) 
-  beta_1 ~ dnorm(0.0,0.01) 
-  beta_2 ~ dnorm(0.0,0.01) 
+  alpha ~ dnorm(0.0,0.01)
+  beta_1 ~ dnorm(0.0,0.01)
+  beta_2 ~ dnorm(0.0,0.01)
 }
 '
 
 # Set up the data
-model_data = list(N = N, y = y, x_1 = x_1, x_2 = x_2, K= 1 )
+model_data = list(T = T, y = y, x_1 = x_1, x_2 = x_2, K = 1)
 
 # Choose the parameters to watch
-model_parameters =  c("alpha","beta_1","beta_2")  
+model_parameters =  c("alpha", "beta_1", "beta_2")
 
 # Run the model
-model_run = jags(data = model_data, 
-                 parameters.to.save = model_parameters, 
-                 model.file=textConnection(model_code),
-                 n.chains=4, 
-                 n.iter=1000, 
-                 n.burnin=200, 
-                 n.thin=2) 
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
+                 model.file = textConnection(model_code),
+                 n.chains = 4,
+                 n.iter = 1000,
+                 n.burnin = 200,
+                 n.thin = 2)
 
 # Simulated results -------------------------------------------------------
 
@@ -104,12 +104,12 @@ beta_2_mean = post$mean$beta_2
 # holding one of the variables fixed whilst varying the other
 par(mfrow = c(2, 1))
 plot(x_1, y)
-lines(x_1, 
-      inv.logit(alpha_mean + beta_1_mean * x_1 + beta_2_mean * mean(x_2)), 
+lines(x_1,
+      inv.logit(alpha_mean + beta_1_mean * x_1 + beta_2_mean * mean(x_2)),
       col = 'red')
 plot(x_2, y)
-lines(x_2, 
-      inv.logit(alpha_mean + beta_1_mean * mean(x_1) + beta_2_mean * x_2), 
+lines(x_2,
+      inv.logit(alpha_mean + beta_1_mean * mean(x_1) + beta_2_mean * x_2),
       col = 'red')
 
 # Line for x_1 should be increasing with x_1, and vice versa with x_2
@@ -120,26 +120,25 @@ lines(x_2,
 
 # Adapted data from Royla and Dorazio (Chapter 2)
 # Moth mortality data
-N = 12
+T = 12
 K = 20
 y = c(1,4,9,13,18,20, 0,2,6,10,12,16)
 sex = c(rep('male',6), rep('female',6))
-dose = rep(c(1,2,4,8,16,32), 2)
-ldose = log(dose)/log(2)
-sexcode = as.integer(sex=='male')
+dose = rep(0:5, 2)
+sexcode = as.integer(sex == 'male')
 # The key questions is: what are the effects of dose and sex?
 
 # Set up the data
-real_data = list(N = N, K = K, y = y, x_1 = sexcode, x_2 = ldose)
+real_data = list(T = T, K = K, y = y, x_1 = sexcode, x_2 = dose)
 
 # Run the mdoel
-real_data_run = jags(data = real_data, 
-                     parameters.to.save = model_parameters, 
-                     model.file=textConnection(model_code),
-                     n.chains=4, 
-                     n.iter=1000,
-                     n.burnin=200,
-                     n.thin=2)
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file = textConnection(model_code),
+                     n.chains = 4,
+                     n.iter = 1000,
+                     n.burnin = 200,
+                     n.thin = 2)
 
 # Plot output
 print(real_data_run)
@@ -151,7 +150,7 @@ beta_1_mean = post$mean$beta_1
 beta_2_mean = post$mean$beta_2
 
 # Look at effect of sex - quantified by beta_1
-hist(real_data_run$BUGSoutput$sims.list$beta_1,breaks=30)
+hist(real_data_run$BUGSoutput$sims.list$beta_1, breaks = 30)
 # Seems positive - males more likely to die
 
 # What about effect of dose?
@@ -160,19 +159,19 @@ par(mfrow=c(1,1)) # Reset plots
 with(real_data,plot(x_2, y, pch = sexcode)) # Data
 # Males
 with(real_data,
-     lines(x_2[o], 
-           K*inv.logit(alpha_mean + beta_1_mean * 1 + beta_2_mean * x_2[o]), 
+     lines(x_2[o],
+           K*inv.logit(alpha_mean + beta_1_mean * 1 + beta_2_mean * x_2[o]),
            col = 'red'))
 # Females
 with(real_data,
-     lines(x_2[o], 
-           K*inv.logit(alpha_mean + beta_1_mean * 0 + beta_2_mean * x_2[o]), 
+     lines(x_2[o],
+           K*inv.logit(alpha_mean + beta_1_mean * 0 + beta_2_mean * x_2[o]),
            col = 'blue'))
 
 # Legend
-legend('topleft', 
-       legend = c('Males', 'Females'), 
-       lty = 1, 
+legend('topleft',
+       legend = c('Males', 'Females'),
+       lty = 1,
        col = c('red','blue'))
 
 # Other tasks -------------------------------------------------------------

@@ -13,9 +13,9 @@ Time  | Class
 ------------- | ----------------------------------------------------
 9:15-10:00 | Time series analysis in climatology and ecology: some examples and general goals (DM) [Module 1](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 10:00-10:45 | Discussion and coffee 
-10:45-11:30 | An introduction to Bayesian statistics (AP) [Module 2](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+10:45-11:30 | An introduction to Bayesian statistics (AP) [Module 2](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_2_intro_bayes/module_2_intro_Bayes.html)
 11:30-12:00 | Discussion and break 
-12:00-12:45 | The JAGS software with simple examples (AP) [Module 3](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+12:00-12:45 | The JAGS software with simple examples (AP) [Module 3](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_3_JAGS/module_JAGS.html)
 12:45-14:00 | Lunch
 14:00-15:30 | Practical: Revision of R and introduction to JAGS (DM) [Practical 1](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 15:30-16:00 | Break 
