@@ -1,0 +1,220 @@
+---
+title: "Tiem Series for Climatologists and Ecologists: Syllabus"
+author: "Andrew C Parnell and Doug McNeall"
+date: "26 April 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Module 1: Time series analysis in climatology and ecology: some examples and general goals (DM)
+Tuesday 10th May 9:15-10:00
+
+------
+
+# Module 2: An introduction to Bayesian statistics (AP)
+Tuesday 10th May 10:45-11:30
+
+Learning outcomes:
+
+- Understand the terms prior, likelihood and posterior
+- Know what a posterior probability distribution is, and why we take samples from it
+- Know how to formulate of a linear regression model in a Bayesian format
+- Be able to suggest appropriate prior distributions for different situations
+
+
+Slides:
+
+1. Title
+2. Who was Bayes?
+3. Why Bayes?
+4. Bayes theorem in maths and english
+5. A very basic Bayesian model with R code
+6. Understanding the different parts of a Bayesian model
+7. Lots of probability distributions
+8. Choosing a likelihood and a prior
+9. An example: linear regression
+10. Simulating from the prior and the likelihood
+11. Posterior computation in JAGS
+12. Calculating the posterior vs sampling from it
+13. Things you can do with posterior samples
+14. Summary so far: for and against Bayes
+15. How to create Bayesian models: a general recipe (start with the data, fit it into a framework, LR, GLM, TS, then look at the parameters, and think of what priors are suitable)
+16. Checking assumptions (e.g. residuals)
+17. The danger of vague priors
+18. Replication in Science and the horror of p-values
+19. Bayesian time series, some general notation
+S20. General tips: build one model for all the data, use informative priors, check your model
+
+------
+
+# Module 3: The JAGS software with simple examples (AP)
+Tuesday 10th May 12:00-12:45
+
+Learning outcomes:
+
+- Understand the code and the output from a JAGS model
+- Be able to write and run JAGS models for linear and logistic regression
+- Be able to change the prior distributions in a JAGS model
+- Be comfortable with plotting and manipulating the output from JAGS
+
+Relevant JAGS files:
+```
+jags_linear_regression.R
+jags_logistic_regression.R
+```
+
+Slides:
+
+1. Title
+2. What is JAGS?
+3. Why JAGS?
+4. The general framework for running jags
+5. Step 1: model code
+6. Step 2: setting up the data
+7. Step 3: running jags
+8. Setting the number of iterations, the size of the burn-in and the amount of thinning
+9. Exploring the posterior distribution and checking convergence
+10. Example 1. linear regression
+11. Ex. model code
+12. Ex. running the model
+13. Getting the posterior simulations
+14. Creating plots
+15. Example 2. logistic regression
+16. Model code. The likelihood and the link function
+17. Running the model
+18. Exploring the posterior
+19. Checking the assumptions
+20. Summary and conclusions
+
+------
+
+# Practical: Revision of R and introduction to JAGS (DM)
+Tuesday 10th May 14:00-15:30
+
+------
+
+# AR(1) models and Random walks (DM)
+Wednesday 11th May 9:15-10:00
+
+------
+
+# ARIMA models (AP): rename to MA and ARIMA models (AP)
+Wednesday 11th May 10:45-11:30
+
+Learning outcomes:
+
+- Recognise and understand the basic theory behind MA(1) and MA(q) models
+- Recognise the basic ARMA(p,q) formulation
+- Understand what an ARIMA(p,d,q) model is
+- How to fit all of the above in JAGS
+
+Relevant JAGS file:
+```
+jags_moving_average.R
+jags_ARMA.R
+jags_ARIMA.R
+```
+
+------
+
+# sARIMA and ARIMAX (AP): rename to ARIMAX and Seasonal models
+Wednesday 11th May 12:00-12:45
+
+Learning outcomes:
+
+- Be able to add on components to ARIMA models
+- Understand the issues with fitting ARIMAX and other extensions to ARIMA models
+- Know how to perform model choice with DIC
+- Understand the basis of seasonal models
+- Know the difference between time and frequency domain models and be able to implement a Fourier model
+
+Relevant JAGS file:
+```
+jags_ARIMAX.R
+jags_Fourier.R
+```
+
+------
+
+# Practical: Fitting ARIMA models in JAGS (DM)
+Wednesday 11th May 14:00-15:30
+
+------
+
+# Stochastic volatility models and Brownian motion (AP): rename to Models with changing variance: ARCH, GARCH and Stochastic Volatility Models
+Thursday 12th May 9:15-10:00
+
+Learning outcomes: 
+
+- Understand how to fit ARCH, GARCH and SVM models in JAGS
+- Know how to check assumptions for these methods
+- Know how to perform cross-validation as an alternative to model selection
+- Know the basics of forecast calibration and scoring rules
+- Understand how to create forecasts with JAGS via the NA method
+
+Relevant JAGS file:
+```
+jags_ARCH.R
+jags_GARCH.R
+jags_SVM.R
+```
+
+------
+
+# Gaussian processes for time series (DM)
+Thursday 12th May 10:45-11:30
+
+------
+
+# Fitting Gaussian processes in JAGS (DM)
+Thursday 12th May 12:00-12:45 and 14:00-15:00
+
+------
+
+#Change-point modelling (AP): rename to Models for continuous time series
+Friday 13th May 9:15-10:00
+
+Learning outcomes: 
+
+- Understand the differences between continuous and discrete time series
+- Understand the basics of Brownian motion
+- Extend the AR model to the Ornstein Uhlenbeck process
+- Ito formulation vs Euler-Maruyama methods
+- Forecasting and interpolation for continuous time models
+- Fit multiple change point models and compare between them
+
+Relevant JAGS file:
+```
+jags_autoregressive.R (revision)
+jags_OU.R
+jags_changepoint.R
+```
+
+------
+
+# Extensions: multivariate time series and long-memory processes (AP): rename to Extensions: state space models, change point modelling, and multivariate time series (AP)
+Friday 13th May 10:45-11:30
+
+Learning outcomes: 
+
+- Learn the basics of parameter and state estimation for simple state space models
+- Create and fit some basic multivariate time series models
+- Understand the state of the art in time series models, including latent factor models, dynamic parameter models,
+
+Relevant JAGS file:
+```
+jags_changepoint.R
+jags_statespace.R
+jags_multivariate_AR.R
+jags_multivariate_statespace.R (not written yet)
+```
+
+------
+
+# Practical 4: Bring your own data (AP and DM)
+Friday 13th May 12:00-13:30
+
+

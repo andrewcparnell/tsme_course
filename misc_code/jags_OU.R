@@ -7,7 +7,7 @@
 
 # Some boiler plate code to clear the workspace, set the working directory, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
+#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -21,10 +21,10 @@ library(R2jags)
 # Likelihood:
 # Sometimes written as dy = theta * ( alpha - y ) dt + sigma * dW(t)
 # More helpful version:
-# y(t) - y(t-s) ~ N( theta * ( alpha - y(t-s) ) * s, s * sigma^2 ) 
+# y(t) - y(t-s) ~ N( theta * ( alpha - y(t-s) ) * s, s * sigma^2 )
 # where s is any positive value
 
-# Prior 
+# Prior
 # alpha ~ N(0, 100)
 # theta ~ U(0, 100) - can be outside the range 0, 1
 # sigma ~ U(0, 100)
@@ -34,7 +34,7 @@ library(R2jags)
 # Some R code to simulate data from the above model
 T = 100
 alpha = 0
-theta = 1 # Note if theta = 0 you end up with BM
+theta = 0.6 # Note if theta = 0 you end up with BM
 sigma = 0.1
 y = rep(NA, T)
 y[1] = 0
@@ -55,11 +55,12 @@ model
     y[i] ~ dnorm( theta * (alpha - y[i-1]) * (t[i] - t[i-1]) + y[i-1], tau[i] )
     tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
   }
-  
+
   # Priors
-  alpha ~ dnorm(0.0,0.01)
-  theta ~ dunif(0,100)
-  sigma ~ dunif(0.0,10.0)
+  alpha ~ dnorm(0, 0.01)
+  #theta ~ dunif(0, 100)
+  theta ~ dunif(0, 100)
+  sigma ~ dunif(0.0, 10.0)
 }
 '
 
@@ -100,16 +101,16 @@ mont2 = mont[-dup_times,]
 
 # Use the trick in jags_BM to estimate the model and get predictions on a new
 # grid
-t_ideal = seq(100+0.01,max(mont2$Age)+0.01, by = 100) # 100 year regular grid
+t_ideal = seq(100+0.5,max(mont2$Age)+0.5, by = 500) # 500 year regular grid
 # Note added on 0.01 to the above to stop there being some zero time differences
-y_ideal = rep(NA, length(t_ideal)) 
+y_ideal = rep(NA, length(t_ideal))
 t_all = c(mont2$Age, t_ideal)
 y_all = c(mont2$MTCO, y_ideal)
 o = order (t_all)
 
 # Create new data set
 real_data = with(mont,
-                   list(y = y_all[o], T = length(y_all), t = t_all[o]))
+                 list(y = y_all[o], T = length(y_all), t = t_all[o]))
 
 # Save all the values of y
 model_parameters = c('y', 'alpha', 'theta', 'sigma')
@@ -119,9 +120,9 @@ real_data_run = jags(data = real_data,
                        parameters.to.save = model_parameters,
                        model.file=textConnection(model_code),
                        n.chains=4,
-                       n.iter=1000,
-                       n.burnin=200,
-                       n.thin=2)
+                       n.iter=10000,
+                       n.burnin=2000,
+                       n.thin=8)
 
 plot(real_data_run)
 
@@ -141,5 +142,9 @@ plot(t_ideal, pred_y, type = 'l')
 # Other tasks -------------------------------------------------------------
 
 # Perhaps exercises, or other general remarks
+# 1) Play around with simulating series with different values of theta. What happens when theta get patricularly large or close to zero? (hint: look at the equation - what happens when theta=0?)
+# 2) Try fitting the model to the real data using different subsets (e.g. the last 10,000 years). Do the results change substantially between periods?
+# 3) (harder) The posterior distribution of theta here is almost zero. Use DIC to compare between the full O-U model and a model with theta = 0
+
 
 
