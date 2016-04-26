@@ -27,9 +27,9 @@ Time  | Class
 ------------- | ----------------------------------------------------
 9:15-10:00 | AR(1) models and Random walks (DM) [Module 4](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 10:00-10:45 | Discussion and coffee 
-10:45-11:30 | ARIMA models (AP) [Module 5](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+10:45-11:30 | MA and ARIMA models (AP) [Module 5](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 11:30-12:00 | Discussion and break 
-12:00-12:45 | sARIMA and ARIMAX (AP) [Module 6](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+12:00-12:45 | ARIMAX and Seasonal models (AP) [Module 6](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 12:45-14:00 | Lunch 
 14:00-15:30 | Practical: Fitting ARIMA models in JAGS (DM) [Practical 2](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 15:30-16:00 | Break
@@ -39,7 +39,7 @@ Time  | Class
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | Stochastic volatility models and Brownian motion (AP) [Module 7](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+9:15-10:00 | Models with changing variance: ARCH, GARCH and Stochastic Volatility Models (AP) [Module 7](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 10:00-10:45 | Discussion and coffee 
 10:45-11:30 | Gaussian processes for time series (DM) [Module 8](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 11:30-12:00 | Break 
@@ -52,9 +52,9 @@ Time  | Class
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | Change-point modelling (AP) [Module 9](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+9:15-10:00 | Models for continuous time series (AP) [Module 9](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 10:00-10:45 | Discussion and coffee
-10:45-11:30 | Extensions: multivariate time series and long-memory processes (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+10:45-11:30 | Extensions: state space models, change point modelling, and multivariate time series (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 11:30-12:00 | Break 
 12:00-12:45 | Practical 4: Bring your own data (AP and DM)
 12:45-14:00 | Lunch

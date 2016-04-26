@@ -91,17 +91,17 @@ Slides:
 
 ------
 
-# Practical: Revision of R and introduction to JAGS (DM)
+# Practical 1: Revision of R and introduction to JAGS (DM)
 Tuesday 10th May 14:00-15:30
 
 ------
 
-# AR(1) models and Random walks (DM)
+# Module 4: AR(1) models and Random walks (DM)
 Wednesday 11th May 9:15-10:00
 
 ------
 
-# ARIMA models (AP): rename to MA and ARIMA models (AP)
+# Module 5: MA and ARIMA models (AP)
 Wednesday 11th May 10:45-11:30
 
 Learning outcomes:
@@ -120,7 +120,7 @@ jags_ARIMA.R
 
 ------
 
-# sARIMA and ARIMAX (AP): rename to ARIMAX and Seasonal models
+# Module 6: ARIMAX and Seasonal models (AP)
 Wednesday 11th May 12:00-12:45
 
 Learning outcomes:
@@ -139,12 +139,12 @@ jags_Fourier.R
 
 ------
 
-# Practical: Fitting ARIMA models in JAGS (DM)
+# Practical 2: Fitting ARIMA models in JAGS (DM)
 Wednesday 11th May 14:00-15:30
 
 ------
 
-# Stochastic volatility models and Brownian motion (AP): rename to Models with changing variance: ARCH, GARCH and Stochastic Volatility Models
+# Module 7: Models with changing variance: ARCH, GARCH and Stochastic Volatility Models (AP)
 Thursday 12th May 9:15-10:00
 
 Learning outcomes: 
@@ -164,17 +164,17 @@ jags_SVM.R
 
 ------
 
-# Gaussian processes for time series (DM)
+# Module 8: Gaussian processes for time series (DM)
 Thursday 12th May 10:45-11:30
 
 ------
 
-# Fitting Gaussian processes in JAGS (DM)
+# Practical 3: Fitting Gaussian processes in JAGS (DM)
 Thursday 12th May 12:00-12:45 and 14:00-15:00
 
 ------
 
-#Change-point modelling (AP): rename to Models for continuous time series
+# Module 9: Models for continuous time series (AP)
 Friday 13th May 9:15-10:00
 
 Learning outcomes: 
@@ -195,7 +195,7 @@ jags_changepoint.R
 
 ------
 
-# Extensions: multivariate time series and long-memory processes (AP): rename to Extensions: state space models, change point modelling, and multivariate time series (AP)
+# Module 10: Extensions: state space models, change point modelling, and multivariate time series (AP)
 Friday 13th May 10:45-11:30
 
 Learning outcomes: 
