@@ -113,7 +113,7 @@ hist( model_run$BUGSoutput$sims.list$theta, breaks = 30)
 ## The Basics of Gibbs sampling in one slide
 
 - Gibbs sampling is a trial and error algorithm. It starts with initial guesses of the parameters and then tries to find new ones which match the likelihood and prior better than the previous guesses
-- Over thousands and thousands of iterations it should eventually converge towards the most likely parmaeter values
+- Over thousands and thousands of iterations it should eventually converge towards the most likely parameter values
 - A clever step in the algorithm means that it occasionally accepts worse guesses. This is what builds up a full posterior probability distribution rather than the most likely guesses
 - The algorithm can fail if the starting values are bad, if it gets stuck in a local maximum, or if it guesses new parameter values that are too similar to the previous (meaning that it doesn't reach the most likely values)
 
@@ -121,7 +121,7 @@ hist( model_run$BUGSoutput$sims.list$theta, breaks = 30)
 
 The usual way to run JAGS is to set some small additional options:
 
-- We start the algorithm from mutliple different starting values. This is known as running multiple _chains_
+- We start the algorithm from multiple different starting values. This is known as running multiple _chains_
 - We discard the first chunk of iterations whilst the algorithm is warming up. This is known as the _burn in_ period
 - We often only keep every $i$th iteration to avoid the problem of values being too similar. This is known as _thinning_
 

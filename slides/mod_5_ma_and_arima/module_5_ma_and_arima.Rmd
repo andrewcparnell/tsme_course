@@ -1,0 +1,223 @@
+---
+title: 'Module 5: Moving Average and ARIMA models'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(latex2exp)
+```
+
+
+## Learning outcomes
+
+- Recognise and understand the basic theory behind MA(1) and MA(q) models
+- Recognise the basic ARMA(p,q) formulation
+- Understand what an ARIMA(p,d,q) model is
+- How to fit all of the above in JAGS
+
+The files `jags_moving_average.R` and `jags_ARIMA.R` are relevant to this module
+
+## Reminder: AR models
+
+- An Autoregressive (AR) model works by making the current data point dependent on the previous value, dampened by a parameter
+- The usual likelihood used is:
+$$y_t \sim N( \alpha + \phi y_{t-1}, \sigma^2)$$
+- $\phi$ is usually constrained (via the prior distribution) to lie between -1 and 1. Outside that range the process blows up
+- The sample PACF is often a good way of diagnosing if an AR model might be appropriate
+
+## Intro to Moving Average Models
+
+- Moving Average (MA) models are similar to AR models but they depend on the previous residual of the series rather than the value itself
+- If the previous residual was large then we want to make a big change to the next prediction
+- If the previous residual was small then we might not want to make much of a change
+- An MA model is very similar to the exponential smoothing heuristic models which are sometimes used for forecasting
+
+## Moving average models and the ACF/PACF
+
+- Recall that the sample partial autocorrelation function (PACF) can be used to diagnose whether an AR model is appropriate (and also suggest the order $p$)
+- For the MA model, it is the sample autocorrelation function (ACF) helps determine the order of the model
+```{r,echo=FALSE,fig.align='center',fig.height=4}
+q = 1 # Order
+T = 100
+sigma = 1
+alpha = 0
+set.seed(123)
+theta = runif(q)
+y = rep(NA,T)
+y[1:q] = rnorm(q,0,sigma)
+eps = rep(NA,T)
+eps[1:q] = y[1:q] - alpha
+for(t in (q+1):T) {
+  y[t] = rnorm(1, mean = alpha + sum(theta*eps[(t-q):(t-1)]), sd = sigma)
+  eps[t] = y[t] - alpha - sum(theta*eps[(t-q):(t-1)])
+}
+q = 4 # Order
+T = 100
+sigma = 1
+alpha = 0
+set.seed(123)
+theta = runif(q)
+y2 = rep(NA,T)
+y2[1:q] = rnorm(q,0,sigma)
+eps = rep(NA,T)
+eps[1:q] = y[1:q] - alpha
+for(t in (q+1):T) {
+  y2[t] = rnorm(1, mean = alpha + sum(theta*eps[(t-q):(t-1)]), sd = sigma)
+  eps[t] = y2[t] - alpha - sum(theta*eps[(t-q):(t-1)])
+}
+par(mfrow=c(1,2))
+acf(y,main='MA(1)')
+acf(y2,main='MA(4)')
+par(mfrow=c(1,1))
+```
+
+## Example 1: MA(1)
+
+- The MA(1) model is defined as:
+$$y_t = \alpha + \theta \epsilon_{t-1} + \epsilon_t$$
+where $\epsilon_t \sim N(0,\sigma^2)$ as usual
+- Parameter $\alpha$ represents the overall mean, whilst $\theta$ controls the amount of weight placed on previous residuals
+- Unlike the AR model there is no restriction on the value of $\theta$, though negative values can sometimes be physically unrealistic
+- The likelihood version of the model is:
+$$y_t \sim N(\alpha + \theta \epsilon_{t-1}, \sigma^2)$$
+
+## Simulating from the MA(1) process
+
+Below is some simple code to simulate from an MA(1) process. Note that the first values of `y` and `eps` need to be initialised
+```{r, include=FALSE}
+set.seed(123)
+```
+```{r}
+T = 100 # Number of observations
+sigma = 1 # Residual sd
+alpha = 0 # Mean
+theta = runif(1) # Choose a positive value
+y = eps = rep(NA,T)
+y[1] = alpha
+eps[1] = 0
+for(t in 2:T) {
+  y[t] = rnorm(1, mean = alpha + theta * eps[t-1], sd = sigma)
+  eps[t] = y[t] - alpha - theta * eps[t-1]
+}
+```
+
+## Resulting plot
+
+```{r,fig.align='center'}
+plot(1:T,y,type='l')
+```
+
+## JAGS code for the MA(1) model with vague priors
+```{r,eval=FALSE}
+model_cod = '
+model
+{
+  # Set up residuals
+  eps[1] <- y[1] - alpha
+  # Likelihood
+  for (t in 2:T) {
+    y[t] ~ dnorm(alpha + theta * eps[t-1], tau)
+    eps[t] <- y[t] - alpha - theta * eps[t-1]
+  }
+  # Priors
+  alpha ~ dnorm(0, 0.01)
+  theta[i] ~ dnorm(0, 0.01)
+  tau <- 1/pow(sigma, 2)
+  sigma ~ dunif(0, 10)
+}
+'
+```
+
+## Extending to MA(q)
+
+- It's reasonably straightforward to extend this model to have the currnet value of $y$ depending on more than one previous residual
+- The model becomes an MA(q) model with:
+$$y_t \sim N(\alpha + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \ldots + \theta_q \epsilon_{t-q}, \sigma^2)$$
+- The parameters are as before, except there are now $q$ values of $\theta$. 
+- Usually when estimated they will decrease with $q$, the older residuals matter less
+- In JAGS it's usually help to re-write the long sum in the mean as: `inprod(theta, eps[(t-q):(t-1)])` just like we did with the AR model
+
+## JAGS code for MA(q) (with vague priors) {.smaller}
+
+```{r}
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- y[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(mean[t], tau)
+    mean[t] <- alpha + inprod(theta, eps[(t-q):(t-1)])
+    eps[t] <- y[t] - alpha - inprod(theta, eps[(t-q):(t-1)])
+  }
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+## Combining AR and MA into ARMA
+
+- There is no reason why we have to use just AR or MA on their own
+- It's possible to combine them together, for example:
+$$y_t = \alpha + \phi y_{t-1} + \theta \epsilon_{t-1} + \epsilon_t$$
+This is an Autoregressive Moving Average (ARMA) model
+- It's often written as ARMA(p,q) where $p$ is the number of AR terms (here 1) and $q$ the number of MA terms (here also 1)
+- ARMA models can deal with a very wide variety of flexible time series behaviour, though they remain stationary
+- The likelihood format is:
+$$y_t \sim N( \alpha + \phi y_{t-1} + \theta \epsilon_{t-1}, \sigma^2 )$$
+
+## Combining ARMA with the random walk to produce ARIMA
+
+- There is one other time series model we have already met, that of the random walk:
+$$y_t - y_{t-1} \sim N(0, \sigma^2)$$
+This type of time series model works on the _differences_ of the data
+- It's possible to difference more than once, e.g.
+$y_t - 2 y_{t-1} + y_{t-2}$ is the second difference of $y_t$
+- Again we can combine these ideas into the ARMA framework to produce an ARIMA model (the I stands for integrated, i.e. differenced)
+
+## Example: the ARIMA(1,1,1) model
+
+- The ARIMA model is written as ARIMA(p,d,q) where $p$ and $q$ are before and $d$ is the number of differenes. 
+- If we want to fit an ARIMA(1,1,1) model we first let $z_t = y_t - y_{t-1}$ then run the model:
+$$z_t \sim N( \alpha + \phi z_{t-1} + \theta \epsilon_{t-1}, \sigma^2 )$$
+- This is an ARIMA model on the first differences
+
+## General format: the ARIMA(p,d,q) model
+
+- First take the $d$th difference of the series $y_t$, then fit the model:
+$$y_t \sim N(\alpha + \phi_1 y_{t-1} + \ldots + \phi_p y_{t-p} + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \ldots + \theta_q \epsilon_{t-q}, \sigma^2)$$
+- In JAGS we use the `inprod` function to get round all the long sums
+- There's no obvious way of choosing the values of $p$, $d$, and $q$. In later modules we look at some model choice options
+
+## Priors for ARIMA models
+
+There are four broad classes of parameters in the model:
+- $\alpha$ which controls the overall mean, and is pretty well informed by the data
+- $\phi$ which controls the AR terms. There are complicated constraints on the parameter values to make the series stationary. However, the posterior distribution will usually be fine as it will be informed by the data, so usually just restricting them to (-1,1)
+
+
+## Example: hadcrut data
+
+
+## Predicting the future
+
+
+## Summary
+
+

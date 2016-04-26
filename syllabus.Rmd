@@ -24,7 +24,6 @@ Learning outcomes:
 - Know how to formulate of a linear regression model in a Bayesian format
 - Be able to suggest appropriate prior distributions for different situations
 
-
 Slides:
 
 1. Title
@@ -118,6 +117,28 @@ jags_ARMA.R
 jags_ARIMA.R
 ```
 
+Slides:
+
+1. Title
+2. Learning outcomes
+3. Reminder: AR models
+4. Intro to Moving Average Models
+5. Moving average models in the ACF/PACF
+6. Example 1: MA(1)
+7. Simulating from the MA(1) process
+8. JAGS code
+9. Extending to MA(q)
+10. JAGS code
+11. Combining AR and MA into ARMA
+12. Combining ARMA with the random walk to produce ARIMA
+13. Example: the ARIMA(1,0,1) model
+14. Example: the ARIMA(1,1,1) model
+15. General format: the ARIMA(p,d,q) model
+16. Priors for ARIMA models
+17. Example: hadcrut data
+18. Predicting the future
+19. Summary
+
 ------
 
 # Module 6: ARIMAX and Seasonal models (AP)
@@ -136,6 +157,29 @@ Relevant JAGS file:
 jags_ARIMAX.R
 jags_Fourier.R
 ```
+
+Slides:
+
+1. Title
+2. Learning outcomes
+3. The great advantage of Bayes: bolting together models
+4. Mixing up GLMs with time series models: some basic ideas
+5. The ARIMAX framework
+6. JAGS code for an ARIMAX model
+7. Example: ARIMAX applied to the hadcrut data
+8. Choosing different models: DIC
+9. The components of DIC 
+10. Other model selection techniques
+11. Example: choosing the order of an ARIMAX model 
+12. Time series in the frequency domain
+13. Methods for estimating seasonal models
+13. Estimating frequencies via a Fourier model
+14. JAGS code for a Fourier model
+15. Example: the Lynx data
+16. Individual vs joint frequency models
+17. Plotting hte periodogram
+18. Bayesian vs traditional frequency analysis
+19. Summary
 
 ------
 

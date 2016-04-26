@@ -48,7 +48,7 @@ plot(1:T,y,type='l')
 
 # Jags code ---------------------------------------------------------------
 
-# This code to fit a general AR(q) model
+# This code to fit a general MA(q) model
 model_code = '
 model
 {
