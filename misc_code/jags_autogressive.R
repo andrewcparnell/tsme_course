@@ -5,9 +5,8 @@
 
 # Some JAGS code to fit AR(1) and AR(p) models
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -116,7 +115,7 @@ print(model_run_2) # Note: phi is correct but in the wrong order
 # Real example ------------------------------------------------------------
 
 # Data wrangling and jags code to run the model on a real data set in the data directory
-hadcrut = read.csv('data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
 with(hadcrut,plot(Year,Anomaly,type='l'))
 

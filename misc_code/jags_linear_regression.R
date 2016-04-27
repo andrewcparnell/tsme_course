@@ -5,9 +5,8 @@
 
 # In this code we generate some data from a simple linear regression model and fit is using jags. We then intepret the output.
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -102,7 +101,7 @@ legend('topleft',
 # Real example ------------------------------------------------------------
 
 # Load in the Church and White global tide gauge data
-sea_level = read.csv('data/church_and_white_global_tide_gauge.csv')
+sea_level = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
 head(sea_level)
 # We're ignore the errors and run the linear regression model.
 

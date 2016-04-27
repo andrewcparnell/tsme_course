@@ -5,9 +5,8 @@
 
 # In this code we fit some random walk type models to data
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -95,7 +94,7 @@ print(model_run_2)
 # Real example ------------------------------------------------------------
 
 # Data wrangling and jags code to run the model on a real data set in the data directory
-ice = read.csv('data/GISP2_20yr.csv')
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
 head(ice)
 with(ice,plot(Age,Del.18O,type='l'))
 # Try plots of differences

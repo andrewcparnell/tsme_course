@@ -5,9 +5,8 @@
 
 # This model fit a simple Brownian motion model in JAGS, out first foray into proper continuous time series
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -49,7 +48,7 @@ model
     y[i] ~ dnorm( alpha * (t[i] - t[i-1]) + y[i-1], tau[i] )
     tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
   }
-  
+
   # Priors
   alpha ~ dnorm(0.0,0.01)
   sigma ~ dunif(0.0,10.0)
@@ -80,7 +79,7 @@ plot(model_run)
 # Real example ------------------------------------------------------------
 
 # Let's now fit this to the entire ice core
-ice = read.csv('data/GISP2_20yr.csv')
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
 head(ice)
 with(ice,plot(Age,Del.18O,type='l'))
 
@@ -101,11 +100,11 @@ print(real_data_run)
 plot(real_data_run)
 
 # Note that with a small change to the data we can now get predicted
-# ice core values for any time slot we would like - this is the same trick 
+# ice core values for any time slot we would like - this is the same trick
 # we used in the ARIMA and ARIMAX files
 t_ideal = seq(0+0.01,max(ice$Age)+0.01, by = 100) # 100 year regular grid
 # Note added on 0.01 to the above to stop there being some zero time differences
-y_ideal = rep(NA, length(t_ideal)) 
+y_ideal = rep(NA, length(t_ideal))
 t_all = c(ice$Age, t_ideal)
 y_all = c(ice$Del.18O, y_ideal)
 o = order (t_all)

@@ -3,11 +3,10 @@
 # Moving average (MA) models
 # Andrew Parnell
 
-# Some jags code to fit a moving average (MA) model of order q. 
+# Some jags code to fit a moving average (MA) model of order q.
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -62,7 +61,7 @@ model
     mean[t] <- alpha + inprod(theta, eps[(t-q):(t-1)])
     eps[t] <- y[t] - alpha - inprod(theta, eps[(t-q):(t-1)])
   }
-  
+
   # Priors
   alpha ~ dnorm(0.0,0.01)
   for (i in 1:q) {
@@ -97,7 +96,7 @@ print(model_run) # Parameter theta should match the true value
 
 # Real example ------------------------------------------------------------
 
-hadcrut = read.csv('data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
 with(hadcrut,plot(Year,Anomaly,type='l'))
 
@@ -133,8 +132,8 @@ eps_fit = y_fit = rep(NA,real_data$T)
 eps_fit[1:real_data$q] = y[1:real_data$q] - alpha_mean
 y_fit[1:real_data$q] = alpha_mean
 for (t in (real_data$q+1):real_data$T) {
-  eps_fit[t] = real_data$y[t] - 
-    alpha_mean - 
+  eps_fit[t] = real_data$y[t] -
+    alpha_mean -
     sum(theta_mean * eps_fit[(t-real_data$q):(t-1)])
   y_fit[t] = alpha_mean + sum(theta_mean * eps_fit[(t-real_data$q):(t-1)])
 }

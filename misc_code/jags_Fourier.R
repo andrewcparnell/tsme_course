@@ -5,9 +5,8 @@
 
 # This model creates a periodogram of the data and applies to the Lynx data set example
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -25,7 +24,7 @@ library(R2jags)
 # y_t ~ N( mu_t, sigma^2)
 # mu_t = beta * cos ( 2 * pi * t * f_k) + gamma * sin ( 2 * pi * t * f_k )
 # K and f_k are data and are set in advance
-# We fit this model repeatedly (it's very fast) for lots of different f_k 
+# We fit this model repeatedly (it's very fast) for lots of different f_k
 
 # Priors - all vague here
 # alpha ~ normal(0, 100)
@@ -46,7 +45,7 @@ K = 20
 sigma = 1
 alpha = 0
 set.seed(123)
-f = seq(0.1,0.4,length=K) # Note 1/f should be the distance between peaks 
+f = seq(0.1,0.4,length=K) # Note 1/f should be the distance between peaks
 beta = gamma = rep(0,K)
 # Pick one frequency and see if the model can find it
 choose = 4
@@ -71,9 +70,9 @@ model
   # Likelihood
   for (t in 1:T) {
     y[t] ~ dnorm(mu[t], tau)
-    mu[t] <- alpha + beta * cos( 2 * pi * t * f_k ) + gamma * sin( 2 * pi * t * f_k ) 
+    mu[t] <- alpha + beta * cos( 2 * pi * t * f_k ) + gamma * sin( 2 * pi * t * f_k )
   }
-  
+
   P = ( pow(beta, 2) + pow(gamma, 2) ) / 2
 
   # Priors
@@ -92,7 +91,7 @@ Power = rep(NA,K)
 # A loop, but should be very fast
 for (k in 1:K) {
   curr_model_data = list(y = y, T = T, f_k = f[k], pi = pi)
-  
+
   model_run = jags(data = curr_model_data,
                    parameters.to.save = model_parameters,
                    model.file=textConnection(model_code),
@@ -100,11 +99,10 @@ for (k in 1:K) {
                    n.iter=1000, # Number of iterations
                    n.burnin=200, # Number of iterations to remove at start
                    n.thin=2) # Amount of thinning
-  
+
   Power[k] = mean(model_run$BUGSoutput$sims.list$P)
 }
 
-stop()
 # Simulated results -------------------------------------------------------
 
 # Results and output of the simulated example, to include convergence checking, output plots, interpretation etc
@@ -130,11 +128,11 @@ f = 1/periods
 
 # Run as before
 for (k in 1:K) {
-  curr_model_data = list(y = as.vector(lynx[,1]), 
-                         T = length(lynx), 
-                         f_k = f[k], 
+  curr_model_data = list(y = as.vector(lynx[,1]),
+                         T = length(lynx),
+                         f_k = f[k],
                          pi = pi)
-  
+
   model_run = jags(data = curr_model_data,
                    parameters.to.save = model_parameters,
                    model.file=textConnection(model_code),
@@ -142,7 +140,7 @@ for (k in 1:K) {
                    n.iter=1000, # Number of iterations
                    n.burnin=200, # Number of iterations to remove at start
                    n.thin=2) # Amount of thinning
-  
+
   Power[k] = mean(model_run$BUGSoutput$sims.list$P)
 }
 

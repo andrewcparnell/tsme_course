@@ -5,9 +5,8 @@
 
 # This file implements different versions of change point modelling in jags. The basic versionhas constant periods and discontinuous jumps. A more advanced version contains jumps in the slope rather than the mean. I call the former discontinuous change point regression (DCPR), and the latter continuous change point regression (CCPR)
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls())
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -186,7 +185,7 @@ abline(v = mean(t_1), col='red')
 # Real example ------------------------------------------------------------
 
 # Run the CCPR-1 model on the HadCrut data
-hadcrut = read.csv('data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
 with(hadcrut,plot(Year,Anomaly,type='l'))
 # Where is the change point?

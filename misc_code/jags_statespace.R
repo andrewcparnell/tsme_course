@@ -9,9 +9,8 @@
 # There are lots of other names for this kind of model, including Hidden Markov Model (HMM), Dynamic Linear Models (DLMs) and Bayesian Networks (BN)
 
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -123,7 +122,7 @@ legend('topleft',
 
 # In this example y is a standardised average tree ring width for 1000AD to 2015AD
 # and x is the mean NH temperature for the subset 1880 to 2015
-palaeo = read.csv('data/palaeo.csv')
+palaeo = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/palaeo.csv')
 par(mfrow=c(2,1))
 with(palaeo,plot(year, proxy))
 with(palaeo,plot(year, temp)) # Only available for a subset

@@ -6,9 +6,8 @@
 # Stochastic volalility models (SVMs) are similar to ARCH/GARCH models in that they model changes in the variance. However SVMs give
 # a probability distribution to the variances via a link function.
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 
@@ -99,7 +98,7 @@ print(model_run)
 # Real example ------------------------------------------------------------
 
 # Fit to the ice core data like the ARCH/GARCH models
-ice = read.csv('data/GISP2_20yr.csv')
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
 head(ice)
 with(ice, plot(Age, Del.18O,type='l'))
 # Try plots of differences

@@ -5,9 +5,8 @@
 
 # The OU process isthe continuous time equivalent of the AR(1) discrete time process
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -92,7 +91,7 @@ cor(model_run$BUGSoutput$sims.matrix) # Not that strong a correlation between th
 # Real example ------------------------------------------------------------
 
 # Run on the Monticchio mean temperature of coldest month data
-mont = read.csv(file = 'data/Monticchio_MTCO.csv')
+mont = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/Monticchio_MTCO.csv')
 with(mont, plot(Age, MTCO, type='l'))
 
 # Remove duplpicate times - model will fail

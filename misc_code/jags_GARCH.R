@@ -5,9 +5,8 @@
 
 # A GARCH model is just like an ARCH model but with an extra term for the previous variance. This code just fits a GARCH(1,1) model
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -95,7 +94,7 @@ print(model_run)
 # Real example ------------------------------------------------------------
 
 # Run the GARCH(1,1) model on the ice core data set
-ice = read.csv('data/GISP2_20yr.csv')
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
 head(ice)
 with(ice, plot(Age, Del.18O,type='l'))
 # Try plots of differences

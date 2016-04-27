@@ -6,7 +6,7 @@
 # In this file we fit a Bayesian Generalised Linear Model (GLM) in the form
 # of a logistic regression.
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
 library(R2jags)
 library(boot) # Package contains the logit transform
