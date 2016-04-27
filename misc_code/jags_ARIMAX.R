@@ -8,6 +8,7 @@
 # For the simpler ARIMA model, see jags_ARIMA.R
 # For the even simpler MA model, see jags_moving_average.R
 # and for the similarly simple AR model, see jags_autoregressive.R
+# Throughout this code I assume no differencing, so it is really an ARMAX model
 
 # Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
@@ -17,7 +18,7 @@ library(R2jags)
 
 # Description of the Bayesian model fitted in this file
 # Notation:
-# y(t) = response variable at time t, t=1,...,T
+# y(t) = response variable at time t, t=1,...,T (possible differenced)
 # alpha = mean parameter
 # eps_t = residual at time t
 # theta = MA parameters
@@ -154,6 +155,10 @@ real_data_run = jags(data = real_data,
 
 # Plot output
 print(real_data_run) # beta small and convergence not as good
+
+traceplot(real_data_run, mfrow=c(1,2), varname = 'beta', ask = FALSE)
+hist(real_data_run$BUGSoutput$sims.list$beta, breaks=30)
+par(mfrow=c(1,1))
 
 # Create some predictions off into the future
 # Using the trick first covered in the jags_ARIMA function

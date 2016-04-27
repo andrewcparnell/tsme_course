@@ -206,6 +206,27 @@ jags_GARCH.R
 jags_SVM.R
 ```
 
+Slides:
+
+1. Title
+2. Learning outcomes
+3. General principles of models for changing variance
+4. Extension 1: ARCH 
+5. JAGS code for ARCH models
+6. Example model run
+7. NA values in JAGS models
+8. The NA trick for producing fitted values
+9. The NA trick for producing forecasts
+10. Example forecasts for ARCH models
+11. From ARCH to GARCH
+12. Example of using the GARCH model
+13. Using DIC to compare ARCH and GARCH
+14. Stochastic Volatility Modelling
+15. JAGS code for SVMs
+16. Example of SVMs and comparison of DIC
+17. Measuring the quality of a forecast; scoring rules
+18. Summary
+
 ------
 
 # Module 8: Gaussian processes for time series (DM)
