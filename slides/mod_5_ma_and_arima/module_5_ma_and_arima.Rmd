@@ -10,8 +10,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
 library(latex2exp)
+library(R2jags)
 ```
 
 
@@ -37,7 +38,7 @@ $$y_t \sim N( \alpha + \phi y_{t-1}, \sigma^2)$$
 - Moving Average (MA) models are similar to AR models but they depend on the previous residual of the series rather than the value itself
 - If the previous residual was large then we want to make a big change to the next prediction
 - If the previous residual was small then we might not want to make much of a change
-- An MA model is very similar to the exponential smoothing heuristic models which are sometimes used for forecasting
+- An MA model is very similar to the exponential smoothing heuristic models which are sometimes used for forecasting. They are also sometimes known as 'error correction models'
 
 ## Moving average models and the ACF/PACF
 
@@ -116,7 +117,7 @@ plot(1:T,y,type='l')
 
 ## JAGS code for the MA(1) model with vague priors
 ```{r,eval=FALSE}
-model_cod = '
+model_code = '
 model
 {
   # Set up residuals
@@ -128,7 +129,7 @@ model
   }
   # Priors
   alpha ~ dnorm(0, 0.01)
-  theta[i] ~ dnorm(0, 0.01)
+  theta ~ dnorm(0, 0.01)
   tau <- 1/pow(sigma, 2)
   sigma ~ dunif(0, 10)
 }
@@ -137,7 +138,7 @@ model
 
 ## Extending to MA(q)
 
-- It's reasonably straightforward to extend this model to have the currnet value of $y$ depending on more than one previous residual
+- It's reasonably straightforward to extend this model to have the current value of $y$ depending on more than one previous residual
 - The model becomes an MA(q) model with:
 $$y_t \sim N(\alpha + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \ldots + \theta_q \epsilon_{t-q}, \sigma^2)$$
 - The parameters are as before, except there are now $q$ values of $\theta$. 
@@ -193,31 +194,137 @@ $y_t - 2 y_{t-1} + y_{t-2}$ is the second difference of $y_t$
 
 ## Example: the ARIMA(1,1,1) model
 
-- The ARIMA model is written as ARIMA(p,d,q) where $p$ and $q$ are before and $d$ is the number of differenes. 
+- The ARIMA model is written as ARIMA(p,d,q) where $p$ and $q$ are as before and $d$ is the number of differences. 
 - If we want to fit an ARIMA(1,1,1) model we first let $z_t = y_t - y_{t-1}$ then run the model:
 $$z_t \sim N( \alpha + \phi z_{t-1} + \theta \epsilon_{t-1}, \sigma^2 )$$
 - This is an ARIMA model on the first differences
 
 ## General format: the ARIMA(p,d,q) model
 
-- First take the $d$th difference of the series $y_t$, then fit the model:
-$$y_t \sim N(\alpha + \phi_1 y_{t-1} + \ldots + \phi_p y_{t-p} + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \ldots + \theta_q \epsilon_{t-q}, \sigma^2)$$
+- First take the $d$th difference of the series $y_t$, and call this $z_t$. You can do this in R with the `diff` function, e.g. `diff(y, differences = 2)` 
+- Then fit the model:
+$$z_t \sim N(\alpha + \phi_1 z_{t-1} + \ldots + \phi_p z_{t-p} + \theta_1 \epsilon_{t-1} + \ldots + \theta_q \epsilon_{t-q}, \sigma^2)$$
 - In JAGS we use the `inprod` function to get round all the long sums
 - There's no obvious way of choosing the values of $p$, $d$, and $q$. In later modules we look at some model choice options
 
 ## Priors for ARIMA models
 
 There are four broad classes of parameters in the model:
-- $\alpha$ which controls the overall mean, and is pretty well informed by the data
-- $\phi$ which controls the AR terms. There are complicated constraints on the parameter values to make the series stationary. However, the posterior distribution will usually be fine as it will be informed by the data, so usually just restricting them to (-1,1)
 
+- $\alpha$ which controls the overall mean, and is pretty well informed by the data. Often people remove this parameter by just mean centering the process $y$
+- $\phi$ which controls the AR terms. There are complicated constraints on the parameter values to make the series stationary. However, the posterior distribution will usually be fine as it will be informed by the data, so usually just restricting them to (-1,1) is adequate
+- $\theta$ which controls the MA terms. There are no restrictions on the values of these but sometimes it makes sense if the values decrease with lag.
+- $\sigma$ controls the residual standard deviation (sometimes known as the white noise standard deviation). If we have an idea on the likely range of the data we can usually place at least a good upper limit on the value of $\sigma$
+
+## Full ARIMA code {.smaller}
+```{r}
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- z[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
+    eps[t] <- z[t] - alpha - ar_mean[t] - ma_mean[t]
+  }
+  
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
 
 ## Example: hadcrut data
 
+```{r}
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+par(mfrow=c(1,2))
+with(hadcrut,plot(Year,Anomaly,type='l'))
+with(hadcrut,plot(Year[-1],diff(Anomaly),type='l'))
+```
 
-## Predicting the future
+## Look at the ACF/PACF
 
+```{r }
+par(mfrow=c(1,2))
+acf(diff(hadcrut$Anomaly))
+pacf(diff(hadcrut$Anomaly))
+```
+
+## Fitting the model ARIMA(3,1,3)
+
+```{r, results='hide', message=FALSE}
+d = 1
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut)-d,
+                      z = diff(hadcrut$Anomaly, differences = d),
+                      q = 3,
+                      p = 3))
+
+model_parameters =  c("alpha","theta","phi","sigma")
+
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+```
+
+## Checking the output
+
+```{r}
+print(real_data_run)
+```
+
+## Predicting the future {.smaller}
+
+We can use the structure of the model to create _one step ahead_ forecasts:
+```{r}
+# Get posterior means
+post = real_data_run$BUGSoutput$sims.list
+alpha_mean = mean(post$alpha)
+theta_mean = apply(post$theta,2,'mean')
+phi_mean = apply(post$phi,2,'mean')
+
+# Create forecasts
+z = diff(hadcrut$Anomaly, differences = d)
+eps_fit = z_fit = rep(NA,real_data$T)
+eps_fit[1:real_data$q] = z[1:real_data$q] - alpha_mean
+z_fit[1:real_data$q] = alpha_mean
+for (t in (real_data$q+1):real_data$T) {
+  ar_mean = sum( phi_mean * z[(t-real_data$p):(t-1)] )
+  ma_mean = sum( theta_mean * eps_fit[(t-real_data$q):(t-1)] )
+  eps_fit[t] = z[t] - alpha_mean - ma_mean - ar_mean
+  z_fit[t] = alpha_mean + ma_mean + ar_mean
+}
+```
+
+## Plotting one step ahead forecasts
+
+```{r}
+with(hadcrut, plot(Year, Anomaly, type = 'l'))
+with(hadcrut, lines(Year, Anomaly + c(0, z_fit), col = 'blue'))
+```
 
 ## Summary
 
-
+- MA(q) models are used to create future forecasts based on the error in the previous forecasts
+- ARMA models combine AR and MA ideas together
+- ARIMA models further add in differencing
+- All of the above can be fitted in JAGS
+- It turns out that it is much simpler and easier to create all the forecasts in JAGS too. More on this later

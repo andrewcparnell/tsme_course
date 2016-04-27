@@ -5,9 +5,8 @@
 
 # This model is a combination of the two previous files called jags_autoregressive and jags_moving_average. The differencing part (the I in integrated) takes place outside of JAGS, so we're really just fitting an ARMA model
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
@@ -63,16 +62,16 @@ model
 {
   # Set up residuals
   for(t in 1:q) {
-    eps[t] <- y[t] - alpha
+    eps[t] <- z[t] - alpha
   }
   # Likelihood
   for (t in (q+1):T) {
-    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
+    z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
-    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
-    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t]
+    ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
+    eps[t] <- z[t] - alpha - ar_mean[t] - ma_mean[t]
   }
-  
+
   # Priors
   alpha ~ dnorm(0.0,0.01)
   for (i in 1:q) {
@@ -109,20 +108,27 @@ print(model_run) # Parameters theta/phi/sigma should match the true value
 # Real example ------------------------------------------------------------
 
 # Data wrangling and jags code to run the model on a real data set in the data directory
-hadcrut = read.csv('data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
+par(mfrow=c(1,2))
 with(hadcrut,plot(Year,Anomaly,type='l'))
+with(hadcrut,plot(Year[-1],diff(Anomaly),type='l'))
+par(mfrow=c(1,1))
 
 # Look at the ACF/PACF
+par(mfrow=c(1,2))
 acf(hadcrut$Anomaly)
 pacf(hadcrut$Anomaly)
+par(mfrow=c(1,1))
+# Suggests ARIMA(3,1,3)
 
 # Set up the data
+d = 1
 real_data = with(hadcrut,
-                 list(T = nrow(hadcrut),
-                      y = hadcrut$Anomaly,
-                      q = 1,
-                      p = 1))
+                 list(T = nrow(hadcrut)-d,
+                      z = diff(Anomaly, differences = d),
+                      q = 3,
+                      p = 3))
 
 # Run the model
 real_data_run = jags(data = real_data,
@@ -134,41 +140,46 @@ real_data_run = jags(data = real_data,
                      n.thin=2)
 
 # Plot output
-print(real_data_run) # Very high degree of autocorrelation
+print(real_data_run)
 
 # Plot some of the fitted values (also known as one-step-ahead predictions)
-post = print(real_data_run)
-alpha_mean = post$mean$alpha
-theta_mean = post$mean$theta
-phi_mean = post$mean$phi
+post = real_data_run$BUGSoutput$sims.list
+alpha_mean = mean(post$alpha)
+theta_mean = apply(post$theta,2,'mean')
+phi_mean = apply(post$phi,2,'mean')
 
 # Create fitted values
-eps_fit = y_fit = rep(NA,real_data$T)
-eps_fit[1:real_data$q] = y[1:real_data$q] - alpha_mean
-y_fit[1:real_data$q] = alpha_mean
+z = diff(hadcrut$Anomaly, differences = d)
+eps_fit = z_fit = rep(NA,real_data$T)
+eps_fit[1:real_data$q] = z[1:real_data$q] - alpha_mean
+z_fit[1:real_data$q] = alpha_mean
 for (t in (real_data$q+1):real_data$T) {
-  ar_mean = sum( phi_mean * real_data$y[(t-1):(t-real_data$p)] )
+  ar_mean = sum( phi_mean * z[(t-real_data$p):(t-1)] )
   ma_mean = sum( theta_mean * eps_fit[(t-real_data$q):(t-1)] )
-  eps_fit[t] = real_data$y[t] - alpha_mean - ar_mean - ma_mean
-  y_fit[t] = alpha_mean + ar_mean + ma_mean
+  eps_fit[t] = z[t] - alpha_mean - ma_mean - ar_mean
+  z_fit[t] = alpha_mean + ma_mean + ar_mean
 }
 
-# Create fitted line
+# Create fitted lines - note that the z_fit values are one step ahead
+# predicitons so they need to be added on
 with(hadcrut, plot(Year, Anomaly, type='l'))
-with(hadcrut, lines(Year, y_fit, col='red'))
+with(hadcrut, lines(Year, Anomaly+c(0,z_fit), col='blue'))
+
 # Not a bad fit!
 
 # Create some predictions off into the future - this time do it within jags
 # A neat trick - just increase T and add on NAs into y!
 T_future = 20 # Number of future data points
 real_data_future = with(hadcrut,
-                        list(T = nrow(hadcrut) + T_future,
-                             y = c(hadcrut$Anomaly, rep(NA,T_future)),
+                        list(T = nrow(hadcrut) + T_future - d,
+                             z = c(diff(hadcrut$Anomaly,
+                                        differences = d),
+                                   rep(NA,T_future)),
                              q = 1,
                              p = 1))
 
 # Just watch y now
-model_parameters =  c("y")
+model_parameters =  c("z")
 
 # Run the model
 real_data_run_future = jags(data = real_data_future,
@@ -183,9 +194,10 @@ real_data_run_future = jags(data = real_data_future,
 print(real_data_run_future)
 
 # Get the future values
-y_all = real_data_run_future$BUGSoutput$sims.list$y
+z_all = real_data_run_future$BUGSoutput$sims.list$z
 # If you look at the above object you'll see that the first columns are all identical because they're the data
-y_all_mean = apply(y_all,2,'mean')
+z_all_mean = apply(z_all,2,'mean')
+y_all_mean = cumsum(c(hadcrut$Anomaly[1],z_all_mean))
 year_all = c(hadcrut$Year,(max(hadcrut$Year)+1):(max(hadcrut$Year)+T_future))
 
 # Plot these all together
@@ -197,8 +209,8 @@ with(hadcrut,lines(Year,Anomaly))
 
 # Other tasks -------------------------------------------------------------
 
-# 1) Calculate the estimated residuals from the AIMRA(1,0,1) fit and plot them. Just like a linear regression they should form a random pattern and be approx normally distributed. Check whether this is so using hist, qqplot, and acf
-# 2) If you look at the fits for the ARIMA(1,0,1) model you'll see that phi is approximately 1. Try creating a model instead which is ARIMA(0,1,1) - this is a moving average model on the differences (go back to the jags_moving_average file to fit this mdoel). Do the fits look any differences
+# 1) Calculate the estimated residuals from a simpler AIMRA(1,0,1) fit and plot them. Just like a linear regression they should form a random pattern and be approx normally distributed. Check whether this is so using hist, qqplot, and acf
+# 2) If you look at the fits for the ARIMA(1,0,1) model you'll see that phi is approximately 1. Try creating a model instead which is ARIMA(0,1,1) - this is a moving average model on the differences (go back to the jags_moving_average file to fit this model). Do the fits look any different?
 # 3) (harder) Try experimenting with the order of the random walk and look at the effect on the fits. Try changing the length of future predictions or adding in confidence intervals (Hint: see the code in the jags_linear_regression file for how to produce confidence intervals from the output; it involves changing the all to apply in the lines above)
 
 
