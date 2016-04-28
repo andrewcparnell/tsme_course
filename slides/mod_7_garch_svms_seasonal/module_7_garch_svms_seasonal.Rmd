@@ -1,5 +1,5 @@
 ---
-title: 'Module 7: Heteroskedasticity; ARCH, GARCH and SVMs'
+title: 'Module 7: Models with changing variance and frequency models'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
   ioslides_presentation:
@@ -13,20 +13,22 @@ output:
 knitr::opts_chunk$set(echo = TRUE, fig.align='center')
 library(latex2exp)
 library(R2jags)
+library(rdatamarket)
 ```
 
 ## Learning outcomes
 
 - Understand how to fit ARCH, GARCH and SVM models in JAGS
 - Know how to check assumptions for these methods
-- Know how to perform cross-validation as an alternative to model selection
-- Know the basics of forecast calibration and scoring rules
+- Understand the basis of seasonal models
+- Know the difference between time and frequency domain models and be able to implement a Fourier model
 
 Relevant JAGS file:
 ```
 jags_ARCH.R
 jags_GARCH.R
 jags_SVM.R
+jags_Fourier.R
 ```
 
 ## General principles of models for changing variance
@@ -178,7 +180,7 @@ plot(ice2$Age[-1], sigma_med, type='l', ylim=range(c(sigma_med)))
 
 ## Compare with DIC
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, results='hide'}
 r_1 = print(real_data_run_1)
 r_2 = print(real_data_run_2)
 ```
@@ -226,8 +228,159 @@ model
 
 ## Example of SVMs and comparison of DIC
 
+```{r, include = FALSE}
+# Choose the parameters to watch
+model_parameters =  c("alpha", "mu", "phi", "sigma", "h")
 
-## Measuring the quality of a forecast; scoring rules
+# Run the model - requires longer to converge
+real_data_run_3 = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
+```
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+hist(real_data_run_3$BUGSoutput$sims.list$alpha, breaks=30)
+hist(real_data_run_3$BUGSoutput$sims.list$mu, breaks=30)
+hist(real_data_run_3$BUGSoutput$sims.list$phi, breaks=30)
+hist(real_data_run_3$BUGSoutput$sims.list$sigma, breaks=30)
+```
 
+## Plot of $h$
+
+```{r}
+h_med = exp(apply(real_data_run_3$BUGSoutput$sims.list$h,2,'quantile',0.5)/2)
+plot(ice2$Age[-1],exp(h_med/2),type='l',ylim=range(c(exp(h_med[-1]/2))))
+```
+
+## Comparison with previous models
+```{r, echo=FALSE, message=FALSE, results='hide'}
+r_3 = print(real_data_run_3)
+```
+
+```{r}
+with(r_1, print(c(DIC, pD)))
+with(r_2, print(c(DIC, pD)))
+with(r_3, print(c(DIC, pD)))
+```
+
+Note quite as good, and many extra parameters due to $h$!
+
+## Seasonal time series
+
+- So far we haven't covered how to deal with data that are _seasonal_ in nature
+- These data generally fall into two categories:
+
+    1. Data where we know the frequency or frequencies (e.g. monthly data on a yearly cycle, frequency = 12)
+    2. Data where we want to esitmate the frequencies (e.g. climate time series, animal populations, etc)
+
+- The former are much simpler, as we can e.g. use month as a covariate in an ARIMAX model, perform a seasonal difference with an ARIMA, or fit a full seasonal ARIMA model (though the JAGS code for this gets complicated)
+
+- The latter are much more interesting. The ACF and PACF can help, but we can usually do much better by creating a _power spectrum_
+
+## Methods for estimating frequencies
+
+- The most common way to estimate the frequencies in a time series is to decompose it in a _Fourier Series_
+
+- We write:
+$$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi f_k) + \gamma_k \cos (2 \pi f_k) \right] + \epsilon_t$$
+
+- Each one of the terms inside the sum is called a _harmonic_. We decompose the series into a sum of sine and cosine waves rather than with AR and MA components
+
+- Each sine/cosine pair has its own frequency $f_k$. If the corresponding coefficients $\beta_k$ and $\gamma_k$ are large we might believe this frequency is important
+
+## Estimating frequencies via a Fourier model
+
+- It's certainly possible to fit the model in the previous slide in JAGS, as it's just a linear regression model with clever explanatory variables
+
+- However, it can be quite slow to fit and, if the number of frequencies $K$ is high, or the frequencies are close together, it can struggle to converge
+
+- More commonly, people repeatedly fit the simpler model:
+$$ y_t = \alpha + \beta \sin (2 \pi f_k) + \gamma \cos (2 \pi f_k) + \epsilon_t$$
+for lots of different values of $f_k$. Then calculate the _power spectrum_ as $P(f_k) = \frac{\beta^2 + \gamma^2}{2}$. Large values of the power spectrum indicate important frequencies
+
+- It's much faster to do this outside of JAGS, using other methods, but we will stick to JAGS
+
+## JAGS code for a Fourier model
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 1:T) {
+    y[t] ~ dnorm(mu[t], tau)
+    mu[t] <- alpha + beta * cos( 2 * pi * t * f_k ) + gamma * sin( 2 * pi * t * f_k )
+  }
+  P = ( pow(beta, 2) + pow(gamma, 2) ) / 2
+
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  beta ~ dnorm(0.0,0.01)
+  gamma ~ dnorm(0.0,0.01)
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,100.0)
+}
+'
+```
+
+## Example: the Lynx data
+```{r, message=FALSE}
+lynx = as.ts(dmseries('http://data.is/Ky69xY'))
+plot(lynx)
+```
+
+## Code to run the JAGS model repeatedly
+
+```{r}
+periods = 5:40
+K = length(periods)
+f = 1/periods
+Power = rep(NA,K)
+model_parameters =  c("P")
+
+for (k in 1:K) {
+  curr_model_data = list(y = as.vector(lynx[,1]),
+                         T = length(lynx),
+                         f_k = f[k],
+                         pi = pi)
+
+  model_run = jags(data = curr_model_data,
+                   parameters.to.save = model_parameters,
+                   model.file=textConnection(model_code),
+                   n.chains=4, 
+                   n.iter=1000,
+                   n.burnin=200,
+                   n.thin=2)
+
+  Power[k] = mean(model_run$BUGSoutput$sims.list$P)
+}
+```
+
+## Plotting the periodogram
+
+```{r}
+par(mfrow = c(2, 1))
+plot(lynx)
+plot(f, Power, type='l')
+axis(side = 3, at = f, labels = periods)
+```
+
+## Bayesian vs traditional frequency analysis
+
+- For quick and dirty analysis, there is no need to run the full Bayesian model, the R function `periodogram` in the TSA package will do the job
+
+- However, the big advantage (as always with Bayes) is that we can also plot the uncertainty in the periodogram, or combine the Fourier model with other modelling ideas (e.g. ARIMA)
+
+- There are much fancier versions of frequency models out there (e.g. Wavelets, or frequency selection models) which can also be fitted in JAGS but require a bit more time and effort
+
+- These Fourier models work for continuous time series too
 
 ## Summary
+
+- We now know how to fit models with changing variance using a variety of techniques
+- We can combine these new models with all the techniques we have previously learnt
+- With known periodicity we can use seasonal differencing (or seasonal AR terms, not covered here but can be upon request)
+- We've seen a basic Fourier model for estimating frequencies via the Bayesian periodogram
