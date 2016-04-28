@@ -29,7 +29,7 @@ Time  | Class
 10:00-10:45 | Discussion and coffee 
 10:45-11:30 | MA and ARIMA models (AP) [Module 5](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_5_ma_and_arima/module_5_ma_and_arima.html)
 11:30-12:00 | Discussion and break 
-12:00-12:45 | ARIMAX and Seasonal models (AP) [Module 6](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_6_arimax_model_choice_forecasting/module_6_arimax_model_choice_forecasting.html)
+12:00-12:45 | ARIMAX, model choice, and forecasting (AP) [Module 6](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_6_arimax_model_choice_forecasting/module_6_arimax_model_choice_forecasting.html)
 12:45-14:00 | Lunch 
 14:00-15:30 | Practical: Fitting ARIMA models in JAGS (DM) [Practical 2](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 15:30-16:00 | Break
@@ -39,7 +39,7 @@ Time  | Class
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | Models with changing variance: ARCH, GARCH and Stochastic Volatility Models (AP) [Module 7](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_7_garch_svms_seasonal/module_7_garch_svms_seasonal.html)
+9:15-10:00 | Models with changing variance and seasonality (AP) [Module 7](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_7_garch_svms_seasonal/module_7_garch_svms_seasonal.html)
 10:00-10:45 | Discussion and coffee 
 10:45-11:30 | Gaussian processes for time series (DM) [Module 8](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 11:30-12:00 | Break 
