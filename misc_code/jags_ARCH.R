@@ -60,7 +60,7 @@ model
     y[t] ~ dnorm(alpha, tau[t])
     tau[t] <- 1/pow(sigma[t], 2)
   }
-  sigma[1] ~ dunif(0,1)
+  sigma[1] <- abs(y[1]-alpha)
   for(t in 2:T) {
     sigma[t] <- sqrt( gamma_1 + gamma_2 * pow(y[t-1] - alpha, 2) )
   }
