@@ -1,0 +1,37 @@
+---
+title: 'Module 2: Introduction to Bayesian Statistics'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(latex2exp)
+library(R2jags)
+```
+
+
+## Learning outcomes
+
+- Know the difference between Frequentist and Bayesian statistics
+- Understand the terms posterior, likelihood and prior. Be able to suggest suitable probability distributions for these terms
+- Be able to interpret the posterior distribution through plots, summaries, and credible intervals
+
+## A slide with a formula and an image
+
+$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
+
+<center><img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Thomas_Bayes.gif" width=40%/></center>
+
+## A slide with code
+
+```{r,fig.align='center'}
+theta = rnorm(100)
+hist(theta, breaks = 30)
+```
+

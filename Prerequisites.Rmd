@@ -22,7 +22,7 @@ Install the following using the corresponding links
 
 Now install the following packages by going into Rstudio (or R) and typing:
 ```{r,eval=FALSE}
-install.packages('R2jags')
+install.packages(c('R2jags', 'rdatamarket'))
 ```
 
 ### Step 3

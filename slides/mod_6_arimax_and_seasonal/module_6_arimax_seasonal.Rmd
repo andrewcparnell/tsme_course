@@ -1,0 +1,324 @@
+---
+title: 'Module 2: Introduction to Bayesian Statistics'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+library(latex2exp)
+library(R2jags)
+library(rdatamarket)
+```
+
+
+## Learning outcomes
+
+- Be able to add on components to ARIMA models
+- Understand the issues with fitting ARIMAX and other extensions to ARIMA models
+- Know how to perform model choice with DIC
+- Understand the basis of seasonal models
+- Know the difference between time and frequency domain models and be able to implement a Fourier model
+
+## The great advantage of Bayes/JAGS: bolting together models
+
+- As we have already seen we can combine bits of models together, such as RW, AR and MA, into ARIMA
+- The default time series software in R (e.g. `arima`) can already fit such models far quicker than JAGS, so why are we bothering to do it this way?
+- Because we have all the code written out, we can add any other modelling ideas to it
+- This allows us to do research in JAGS at the cutting edge of applied and theoretical statistics
+
+## Mixing up GLMs with time series models: some basic ideas
+
+- As an example, suppose our response variable $y_t$ was actually binary; we can't use the default ARIMA framework
+- Instead use ideas from logistic regression, e.g. the logistic-AR model:
+$$y_t \sim Bin(1, p_t);\; \mbox{logit}(p_t) = \alpha + \phi p_{t-1}$$
+- What if the response variable is unbounded counts, no problem! The Poisson AR model:
+$$y_t \sim Poisson(\lambda_t);\; \log(p_t) = \alpha + \phi p_{t-1}$$
+- In JAGS, we can adapt any of the time series to any GLM situation
+
+## The ARIMAX framework
+
+- The ARIMAX framework (ARIMA with eXplanatory variables) is just another such extension which is easy to add in JAGS
+- We ARIMAX model is:
+$$z_t \sim N(\alpha + \mbox{AR terms} + \mbox{MA terms} + \beta_1 x_{1t} + \ldots \beta_r x_{rt}, \sigma^2)$$
+where we now include $r$ possible explanatory variables with coefficients $\beta_1, \ldots,\beta_r$
+- This can be easily added to the code in JAGS
+
+## Warnings about ARIMAX models
+
+There are two key things to be wary of when using this type of ARIMAX model:
+
+1. It's hard to interpret the $\beta$ values. It is not the case (as in normal regression) that an increase of 1 unit in $x$ will lead to an increase of $\beta$ in $y$ because of all the AR terms. 
+2. If you are differencing the data before running the model, you also need to difference the explanatory variables
+
+If you're just interest in forecasting then the problem in 1 goes away, but if you are interested in the causation of $x$ on $y$ you can fit the regression model separately or try a dynamic regression model (see Module 10)
+
+## JAGS code for an ARIMAX model (shortened)
+```{r, eval=FALSE}
+model_code = '
+model
+{
+  ...
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    reg_mean[t] <- inprod(beta, x[t,])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
+  }
+  
+  # Priors
+  ...
+  for(i in 1:k) {
+    beta[i] ~ dnorm(0.0,0.01)
+  }
+  ...
+}
+'
+```
+
+## Example: ARIMAX applied to the hadcrut data
+
+Goal: fit an ARIMAX(1,0,1) model (i.e. no differencing and with 1 AR and 1 MA term) as well as one linear explanatory variable, here year
+
+- As these models start to get more complicated we require longer burn-in, more iterations, and more thinning to achieve convergence
+
+- It's often easier to put informative prior distributions on the regression parameters as usually we can guess at least the sign of the parameter (though beware over-interpretation)
+
+## ARIMAX model output
+
+```{r, include=FALSE}
+# Run the model, but don't show it
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- y[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    reg_mean[t] <- inprod(beta, x[t,])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
+  }
+
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:k) {
+    beta[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+
+# Data wrangling and jags code to run the model on a real data set in the data directory
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+head(hadcrut)
+with(hadcrut,plot(Year,Anomaly,type='l'))
+
+# Look at the ACF/PACF
+acf(hadcrut$Anomaly)
+pacf(hadcrut$Anomaly)
+
+# Set up the data
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut),
+                      y = Anomaly,
+                      x = matrix(Year,ncol=1),
+                      q = 1,
+                      p = 1,
+                      k = 1))
+
+# Choose the parameters to watch
+model_parameters =  c("beta")
+
+# This needs a longer run to get decent convergence
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
+```
+
+```{r}
+traceplot(real_data_run, mfrow=c(1,2), varname = 'beta', ask = FALSE)
+hist(real_data_run$BUGSoutput$sims.list$beta, breaks=30)
+```
+
+## Choosing different models: DIC
+
+- So far we have met a wide array of discrete-time time series models, all of which involve choose a $p$ (AR component), a $q$ (MA component), and a $d$ (differencing component)
+
+- We need a principled method to choose the best values of these. It will always be the case that increasing these values will lead to a better fit
+
+- There are several proposed methods for doing this:
+
+    1. Treat the model as another parameter (Bayes factors and reversible jump)
+    2. Remove some of the data and predict the left out data (Cross-validation)
+    3. Use statistical theory to penalise the fit of the model (Information Criteria)
+
+- All of these are good and useful, but number 3 is implemented by JAGS for us to use
+
+## The Deviance Information Criterion
+
+- As JAGS is running through the iterations, it is constantly calculating the value of the likelihood, the probability of the data given the parameters. JAGS reports this as the _deviance_ which -2 times the log of the likelihood
+
+- For a good set of parameters the value of the deviance should be high, and the model once converged should reach a stable value of the deviance
+
+- If you run the model with, e.g. an extra AR term, you'd find that the deviance (once the model had converged) would be slightly higher 
+
+- The idea behind _information criteria_ is to penalise the deviance by a measure of the complexity of the model
+
+## Measuring model complexity
+
+- You may have met many other types of information criteria, e.g. the Akaike (AIC) or Bayesian (BIC, not really Bayesian)
+
+- These work by adding on a function of the number of parameters, designed to approximate some performance criterion (e.g. out of sample performance for AIC)
+
+- This isn't quite so simple in the Bayesian world as the number of parameters, in the presence of prior information, can be hard to estimate
+
+- The version JAGS uses is known as the Deviance Information Criterion (DIC) and is built specifically to penalise the deviance by the _effective_ number of parameters, which it calls $p_D$
+
+## The components of DIC 
+
+- JAGS provides the DIC whenever we call the `print` command on a model run
+```{r, eval=FALSE}
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 6.9 and DIC = -261.1
+```
+- Here $p_D$ estimates the effective number of parameters in the model and the DIC is calculated as the deviance plus the $p_D$ value
+
+- The usual practice is to run models of differing complexity (e.g. with differing values of $p$, $d$, and $q$) and choose the model with the lowest DIC
+
+## Seasonal time series
+
+- So far we haven't covered how to deal with data that are _seasonal_ in nature
+- These data generally fall into two categories:
+
+    1. Data where we know the frequency or frequencies (e.g. monthly data on a yearly cycle, frequency = 12)
+    2. Data where we want to esitmate the frequencies (e.g. climate time series, animal populations, etc)
+
+- The former are much simpler, as we can e.g. use month as a covariate in an ARIMAX model, perform a seasonal difference with an ARIMA, or fit a full seasonal ARIMA model (though the JAGS code for this gets complicated)
+
+- The latter are much more interesting. The ACF and PACF can help, but we can usually do much better by creating a _power spectrum_
+
+## Methods for estimating frequencies
+
+- The most common way to estimate the frequencies in a time series is to decompose it in a _Fourier Series_
+
+- We write:
+$$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi f_k) + \gamma_k \cos (2 \pi f_k) \right] + \epsilon_t$$
+
+- Each one of the terms inside the sum is called a _harmonic_. We decompose the series into a sum of sine and cosine waves rather than with AR and MA components
+
+- Each sine/cosine pair has its own frequency $f_k$. If the corresponding coefficients $\beta_k$ and $\gamma_k$ are large we might believe this frequency is important
+
+## Estimating frequencies via a Fourier model
+
+- It's certainly possible to fit the model in the previous slide in JAGS, as it's just a linear regression model with clever explanatory variables
+
+- However, it can be quite slow to fit and, if the number of frequencies $K$ is high, or the frequencies are close together, it can struggle to converge
+
+- More commonly, people repeatedly fit the simpler model:
+$$ y_t = \alpha + \beta \sin (2 \pi f_k) + \gamma \cos (2 \pi f_k) + \epsilon_t$$
+for lots of different values of $f_k$. Then calculate the _power spectrum_ as $P(f_k) = \frac{\beta^2 + \gamma^2}{2}$. Large values of the power spectrum indicate important frequencies
+
+- It's much faster to do this outside of JAGS, using other methods, but we will stick to JAGS
+
+## JAGS code for a Fourier model
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 1:T) {
+    y[t] ~ dnorm(mu[t], tau)
+    mu[t] <- alpha + beta * cos( 2 * pi * t * f_k ) + gamma * sin( 2 * pi * t * f_k )
+  }
+  P = ( pow(beta, 2) + pow(gamma, 2) ) / 2
+
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  beta ~ dnorm(0.0,0.01)
+  gamma ~ dnorm(0.0,0.01)
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,100.0)
+}
+'
+```
+
+## Example: the Lynx data
+```{r, message=FALSE}
+lynx = as.ts(dmseries('http://data.is/Ky69xY'))
+plot(lynx)
+```
+
+## Code to run the JAGS model repeatedly
+
+```{r}
+periods = 5:40
+K = length(periods)
+f = 1/periods
+Power = rep(NA,K)
+model_parameters =  c("P")
+
+for (k in 1:K) {
+  curr_model_data = list(y = as.vector(lynx[,1]),
+                         T = length(lynx),
+                         f_k = f[k],
+                         pi = pi)
+
+  model_run = jags(data = curr_model_data,
+                   parameters.to.save = model_parameters,
+                   model.file=textConnection(model_code),
+                   n.chains=4, 
+                   n.iter=1000,
+                   n.burnin=200,
+                   n.thin=2)
+
+  Power[k] = mean(model_run$BUGSoutput$sims.list$P)
+}
+```
+
+## Plotting the periodogram
+
+```{r}
+par(mfrow = c(2, 1))
+plot(lynx)
+plot(f, Power, type='l')
+axis(side = 3, at = f, labels = periods)
+```
+
+## Bayesian vs traditional frequency analysis
+
+- For quick and dirty analysis, there is no need to run the full Bayesian model, the R function `periodogram` in the TSA package will do the job
+
+- However, the big advantage (as always with Bayes) is that we can also plot the uncertainty in the periodogram, or combine the Fourier model with other modelling ideas (e.g. ARIMA)
+
+- There are much fancier versions of frequency models out there (e.g. Wavelets, or frequency selection models) which can also be fitted in JAGS but require a bit more time and effort
+
+- These Fourier models work for continuous time series too
+
+## Summary
+
+- We now know how to incorporate explanatory variables in ARIMA models (and we also know the pitfalls of doing so)
+- We know how to compare models using DIC and the basis behind penalised deviance
+- We understand how to estimate frequencies using a power spectrum calculated in JAGS

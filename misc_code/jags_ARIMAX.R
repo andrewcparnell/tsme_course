@@ -4,21 +4,21 @@
 # ARIMAX model - AutoRegressive Integrated Moving Average with eXplanatory variables
 # Andrew Parnell
 
-# Some jags code for fitting an ARIMAX model. 
+# Some jags code for fitting an ARIMAX model.
 # For the simpler ARIMA model, see jags_ARIMA.R
 # For the even simpler MA model, see jags_moving_average.R
 # and for the similarly simple AR model, see jags_autoregressive.R
+# Throughout this code I assume no differencing, so it is really an ARMAX model
 
-# Some boiler plate code to clear the workspace, set the working directory, and load in required packages
+# Some boiler plate code to clear the workspace, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
 
 # Description of the Bayesian model fitted in this file
 # Notation:
-# y(t) = response variable at time t, t=1,...,T
+# y(t) = response variable at time t, t=1,...,T (possible differenced)
 # alpha = mean parameter
 # eps_t = residual at time t
 # theta = MA parameters
@@ -85,7 +85,7 @@ model
     reg_mean[t] <- inprod(beta, x[t,])
     eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
   }
-  
+
   # Priors
   alpha ~ dnorm(0.0,0.01)
   for (i in 1:q) {
@@ -127,7 +127,7 @@ print(model_run)
 # Real example ------------------------------------------------------------
 
 # Data wrangling and jags code to run the model on a real data set in the data directory
-hadcrut = read.csv('data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
 with(hadcrut,plot(Year,Anomaly,type='l'))
 
@@ -155,6 +155,10 @@ real_data_run = jags(data = real_data,
 
 # Plot output
 print(real_data_run) # beta small and convergence not as good
+
+traceplot(real_data_run, mfrow=c(1,2), varname = 'beta', ask = FALSE)
+hist(real_data_run$BUGSoutput$sims.list$beta, breaks=30)
+par(mfrow=c(1,1))
 
 # Create some predictions off into the future
 # Using the trick first covered in the jags_ARIMA function
@@ -189,8 +193,8 @@ y_all = real_data_run_future$BUGSoutput$sims.list$y
 # If you look at the above object you'll see that the first columns are all identical because they're the data
 y_all_mean = apply(y_all,2,'mean')
 # Also create the upper/lower 95% CI values
-y_all_low = apply(y_all,2,'quantile',0.025) 
-y_all_high = apply(y_all,2,'quantile',0.975) 
+y_all_low = apply(y_all,2,'quantile',0.025)
+y_all_high = apply(y_all,2,'quantile',0.975)
 year_all = c(hadcrut$Year,year_future)
 
 # Plot these all together
