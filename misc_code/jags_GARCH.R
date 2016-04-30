@@ -20,7 +20,7 @@ library(R2jags)
 # gamma_2 = AR component of variance
 # Likelihood (see ARCH code also):
 # y_t ~ N(mu, sigma_t^2)
-# sigma_t^2 = gamma_0 + gamma_1 * (y_{t-1} - mu)^2 + gamma_2 * sigma_{t-1}^2
+# sigma_t^2 = gamma_1 + gamma_2 * (y_{t-1} - mu)^2 + gamma_3 * sigma_{t-1}^2
 
 # Priors
 # gamma_1 ~ unif(0,10) - needs to be positive
@@ -57,7 +57,7 @@ model
     y[t] ~ dnorm(alpha, tau[t])
     tau[t] <- 1/pow(sigma[t], 2)
   }
-  sigma[1] ~ dunif(0,1)
+  sigma[1] ~ dunif(0,10)
   for(t in 2:T) {
     sigma[t] <- sqrt( gamma_1 + gamma_2 * pow(y[t-1] - alpha, 2) + gamma_3 * pow(sigma[t-1], 2) )
   }

@@ -22,7 +22,7 @@ library(R2jags)
 # sigma = residual standard deviation for transformed volatilities
 
 # Likelihood:
-# y_t ~ normal( alpha, exp( h_t / 2)^2 )
+# y_t ~ normal( alpha, exp( h_t ) )
 # h_t ~ normal( mu + phi * ( h_{t-1} - mu), sigma^2)
 
 # Priors:
@@ -58,7 +58,7 @@ model
   # Likelihood
   for (t in 1:T) {
     y[t] ~ dnorm(alpha, tau_h[t])
-    tau_h[t] <- 1/pow(exp(h[t]/2), 2)
+    tau_h[t] <- 1/exp(h[t])
   }
   h[1] <- mu
   for(t in 2:T) {

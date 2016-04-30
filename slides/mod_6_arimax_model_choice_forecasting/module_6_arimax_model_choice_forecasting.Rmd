@@ -1,5 +1,5 @@
 ---
-title: 'Module 2: Introduction to Bayesian Statistics'
+title: 'Module 6: ARIMAX, model choice and forecasting'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
   ioslides_presentation:
@@ -21,9 +21,16 @@ library(rdatamarket)
 
 - Be able to add on components to ARIMA models
 - Understand the issues with fitting ARIMAX and other extensions to ARIMA models
+- Understand how to create forecasts with JAGS via the NA method
 - Know how to perform model choice with DIC
-- Understand the basis of seasonal models
-- Know the difference between time and frequency domain models and be able to implement a Fourier model
+- Know how to perform model choice with cross-validation
+- Know the basics of forecast calibration and scoring rules
+
+Relevant JAGS file:
+```
+jags_ARIMAX.R
+```
+
 
 ## The great advantage of Bayes/JAGS: bolting together models
 
@@ -163,6 +170,63 @@ traceplot(real_data_run, mfrow=c(1,2), varname = 'beta', ask = FALSE)
 hist(real_data_run$BUGSoutput$sims.list$beta, breaks=30)
 ```
 
+## JAGS and the NA trick
+
+- So far, we have been giving JAGS the data in a list. It looks up these objects in the `model_code` file and treats all the others as parameters to be estimated
+
+- If you set some of the values in your data list to the value `NA` (R's missing value placeholder) JAGS will treat these missing data as _parameters to be estimated_
+
+- This is especially useful for time series as we can create extra `NA` y values at the end of our series, and JAGS will magically turn these into future forecasts
+
+## The NA trick in action
+
+Start with a simple AR(1) model
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 2:T) {
+    y[t] ~ dnorm(alpha + phi * y[t-1], 1/pow(sigma,2))
+  }
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  phi ~ dunif(-1,1)
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+## The NA trick in action (cont)
+
+```{r}
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+
+num_forecasts = 10 # 10 extra years
+
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut) + num_forecasts,
+                      y = c(Anomaly, rep(NA, num_forecasts))))
+
+model_parameters = c('y')
+                 
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+```
+
+## NA trick plots
+
+```{r}
+y_pred = real_data_run$BUGSoutput$sims.list$y
+y_med = apply(y_pred,2,'median')
+plot(c(hadcrut$Year,2016:2025),y_med,type='l')
+```
+
 ## Choosing different models: DIC
 
 - So far we have met a wide array of discrete-time time series models, all of which involve choose a $p$ (AR component), a $q$ (MA component), and a $d$ (differencing component)
@@ -208,117 +272,57 @@ pD = 6.9 and DIC = -261.1
 
 - The usual practice is to run models of differing complexity (e.g. with differing values of $p$, $d$, and $q$) and choose the model with the lowest DIC
 
-## Seasonal time series
+## An alternative to DIC; cross-validation
 
-- So far we haven't covered how to deal with data that are _seasonal_ in nature
-- These data generally fall into two categories:
+- Often the gold standard by which time series models are judged as how well they forecast future values of the series
 
-    1. Data where we know the frequency or frequencies (e.g. monthly data on a yearly cycle, frequency = 12)
-    2. Data where we want to esitmate the frequencies (e.g. climate time series, animal populations, etc)
+- Without waiting for more data to become available, we can remove some of the data points at the end of the series, fit the model, and forecast into the future (using e.g. the `NA` trick). We can then compare the forecasts with the left out data
 
-- The former are much simpler, as we can e.g. use month as a covariate in an ARIMAX model, perform a seasonal difference with an ARIMA, or fit a full seasonal ARIMA model (though the JAGS code for this gets complicated)
+- This is slightly different to standard methods of cross-validation you might have met in other scenarios (e.g. K-fold cross validation)
 
-- The latter are much more interesting. The ACF and PACF can help, but we can usually do much better by creating a _power spectrum_
+## CV in action
 
-## Methods for estimating frequencies
+```{r, results='hide', messages=FALSE}
+n_remove = 10
 
-- The most common way to estimate the frequencies in a time series is to decompose it in a _Fourier Series_
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut),
+                      y = c(Anomaly[1:(length(Anomaly)-n_remove)],
+                            rep(NA, n_remove))))
 
-- We write:
-$$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi f_k) + \gamma_k \cos (2 \pi f_k) \right] + \epsilon_t$$
-
-- Each one of the terms inside the sum is called a _harmonic_. We decompose the series into a sum of sine and cosine waves rather than with AR and MA components
-
-- Each sine/cosine pair has its own frequency $f_k$. If the corresponding coefficients $\beta_k$ and $\gamma_k$ are large we might believe this frequency is important
-
-## Estimating frequencies via a Fourier model
-
-- It's certainly possible to fit the model in the previous slide in JAGS, as it's just a linear regression model with clever explanatory variables
-
-- However, it can be quite slow to fit and, if the number of frequencies $K$ is high, or the frequencies are close together, it can struggle to converge
-
-- More commonly, people repeatedly fit the simpler model:
-$$ y_t = \alpha + \beta \sin (2 \pi f_k) + \gamma \cos (2 \pi f_k) + \epsilon_t$$
-for lots of different values of $f_k$. Then calculate the _power spectrum_ as $P(f_k) = \frac{\beta^2 + \gamma^2}{2}$. Large values of the power spectrum indicate important frequencies
-
-- It's much faster to do this outside of JAGS, using other methods, but we will stick to JAGS
-
-## JAGS code for a Fourier model
-```{r}
-model_code = '
-model
-{
-  # Likelihood
-  for (t in 1:T) {
-    y[t] ~ dnorm(mu[t], tau)
-    mu[t] <- alpha + beta * cos( 2 * pi * t * f_k ) + gamma * sin( 2 * pi * t * f_k )
-  }
-  P = ( pow(beta, 2) + pow(gamma, 2) ) / 2
-
-  # Priors
-  alpha ~ dnorm(0.0,0.01)
-  beta ~ dnorm(0.0,0.01)
-  gamma ~ dnorm(0.0,0.01)
-  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
-  sigma ~ dunif(0.0,100.0)
-}
-'
+model_parameters = c('y')
+                 
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
 ```
 
-## Example: the Lynx data
-```{r, message=FALSE}
-lynx = as.ts(dmseries('http://data.is/Ky69xY'))
-plot(lynx)
-```
-
-## Code to run the JAGS model repeatedly
+## CV output - very poor forecasts!
 
 ```{r}
-periods = 5:40
-K = length(periods)
-f = 1/periods
-Power = rep(NA,K)
-model_parameters =  c("P")
-
-for (k in 1:K) {
-  curr_model_data = list(y = as.vector(lynx[,1]),
-                         T = length(lynx),
-                         f_k = f[k],
-                         pi = pi)
-
-  model_run = jags(data = curr_model_data,
-                   parameters.to.save = model_parameters,
-                   model.file=textConnection(model_code),
-                   n.chains=4, 
-                   n.iter=1000,
-                   n.burnin=200,
-                   n.thin=2)
-
-  Power[k] = mean(model_run$BUGSoutput$sims.list$P)
-}
+y_new_median = apply(real_data_run$BUGSoutput$sims.list$y,2,'median')
+last_n = with(hadcrut, (length(Anomaly)-n_remove):length(Anomaly))
+plot(hadcrut$Anomaly[last_n], y_new_median[last_n], xlab='true', ylab='predicted')
+abline(a = 0, b = 1, col='red')
 ```
 
-## Plotting the periodogram
+## Forecasting and scoring rules
 
-```{r}
-par(mfrow = c(2, 1))
-plot(lynx)
-plot(f, Power, type='l')
-axis(side = 3, at = f, labels = periods)
-```
+- A common mantra in time series is to aim for _sharpness under calibration_
 
-## Bayesian vs traditional frequency analysis
+- Sharpness refers to the variance of the forecast. A _sharp_ forecast is one with a low variance
 
-- For quick and dirty analysis, there is no need to run the full Bayesian model, the R function `periodogram` in the TSA package will do the job
+- However, for a forecast to be useful, it needs to be _calibrated_. This means that if you predict a 20% chance of rain, it should rain on 20% of those days. A sharp forecast is only useful if it is calibrated
 
-- However, the big advantage (as always with Bayes) is that we can also plot the uncertainty in the periodogram, or combine the Fourier model with other modelling ideas (e.g. ARIMA)
-
-- There are much fancier versions of frequency models out there (e.g. Wavelets, or frequency selection models) which can also be fitted in JAGS but require a bit more time and effort
-
-- These Fourier models work for continuous time series too
+- Often forecasters use _scoring rules_ to evaluate whether a forecast is calibrated or not. This is a very broad issue and beyond the remit of this course
 
 ## Summary
 
 - We now know how to incorporate explanatory variables in ARIMA models (and we also know the pitfalls of doing so)
-- We know how to compare models using DIC and the basis behind penalised deviance
-- We understand how to estimate frequencies using a power spectrum calculated in JAGS
+- We have learnt the NA trick fore creating forecasts (more on this in the associated `.R` files)
+- We know how to compare models using DIC and cross validation
+- We've learnt a little bit about forecast calibration
