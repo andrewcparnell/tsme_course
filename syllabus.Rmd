@@ -251,7 +251,7 @@ Learning outcomes:
 - Extend the AR model to the Ornstein Uhlenbeck process
 - Ito formulation vs Euler-Maruyama methods
 - Forecasting and interpolation for continuous time models
-- Fit multiple change point models and compare them with DIC
+- Fit different types of change point models
 
 Relevant JAGS file:
 ```
@@ -305,11 +305,6 @@ jags_multivariate_AR.R (not written yet)
 jags_multivariate_statespace.R (not written yet)
 ```
 
-------
-
-# Practical 4: Bring your own data (AP and DM)
-Friday 13th May 12:00-13:30
-
 Slides:
 
 1. Title
@@ -332,4 +327,11 @@ Slides:
 18. Dynamic linear models
 19. Latent factor time series models
 20. Summary
+
+
+
+------
+
+# Practical 4: Bring your own data (AP and DM)
+Friday 13th May 12:00-13:30
 

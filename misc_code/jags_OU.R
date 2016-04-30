@@ -57,7 +57,6 @@ model
 
   # Priors
   alpha ~ dnorm(0, 0.01)
-  #theta ~ dunif(0, 100)
   theta ~ dunif(0, 100)
   sigma ~ dunif(0.0, 10.0)
 }
