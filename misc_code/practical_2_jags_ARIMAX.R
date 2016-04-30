@@ -1,6 +1,5 @@
 # Header ------------------------------------------------------------------
 
-
 # ARIMAX model - AutoRegressive Integrated Moving Average with eXplanatory variables
 # Andrew Parnell & Doug McNeall
 

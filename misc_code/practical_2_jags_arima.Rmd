@@ -1,0 +1,153 @@
+---
+title: "practical_2_jags_arima"
+author: "Doug McNeall"
+date: "28 April 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls()) # Clear the workspace
+setwd("~/GitHub/tsme_course/")
+knitr::opts_chunk$set(echo = TRUE)
+library(R2jags)
+```
+
+## Introduction
+
+Welcome to Practical 2, on using JAGS to fit ARIMA type models. In this practical we'll
+
+- Simulate some ARIMA and ARIMAX timeseries, and fit an approriate model using JAGS
+- Fit ARIMA and ARIMAX models to some real data, and make some predictions
+- Fit an appropriate model to some mystery data
+
+You should follow and run the commands shown in the grey boxes below. At various points you will see a horizontal line in the text which indicates a question you should try to answer, like this:
+
+***
+
+What words does the following command print to the console?
+```{r,results='hide'}
+print("Hello World")
+```
+
+***
+
+If you get stuck, please get our attention and we will try to help! There are no prepared answers to these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
+
+You can run the code from these practicals by loading up the `.Rmd` file in the same directory in Rstudio. This is an R markdown document containing all the text. Feel free to add in your own answers, or edit the text to give yourself extra notes. You can also run the code directly by highlighting the relevant code and clicking `Run`.
+
+## Simulate some data from an ARIMA process
+
+In the first section, we will simulate some data from an ARIMA process.
+First we have some notation, and then some example R code to run.
+
+
+### Notation for the ARIMA model
+
+```{r, notation arima}
+# Description of the Bayesian model fitted in this file
+# This is for a general ARIMA(p,d,q) model
+# Notation:
+# y(t) = response variable at time t, t=1,...,T
+# alpha = mean parameter
+# eps_t = residual at time t
+# theta = MA parameters
+# phi = AR parameters
+# sigma = residual standard deviation
+# d = number of first differences
+# p and q = number of autoregressive and moving average components respecrively
+# Likelihood:
+# y ~ N(alpha + phi[1] * y[t-1] + ... + phi[p] * y[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q}, sigma^2)
+# Priors
+# alpha ~ N(0,100)
+# phi ~ N(0,100) - need to be a bit careful with these if you want the process to remain stable
+# theta ~ N(0,100)
+# sigma ~ unif(0,10)
+```
+
+### R to simulate from the ARIMA model
+```{r, setup arima}
+# Some R code to simulate data from the above model
+p = 1 # Number of autoregressive terms
+d = 0 # Number of differences
+q = 1 # Numner of MA terms
+T = 100
+sigma = 1
+alpha = 0
+set.seed(123) # Ensures reproducability
+theta = runif(q)
+phi = sort(runif(p),decreasing=TRUE)
+y = rep(NA,T)
+y[1:q] = rnorm(q,0,sigma)
+eps = rep(NA,T)
+eps[1:q] = y[1:q] - alpha
+for(t in (q+1):T) {
+  ar_mean = sum( phi * y[(t-1):(t-p)] )
+  ma_mean = sum( theta * eps[(t-q):(t-1)] )
+  y[t] = rnorm(1, mean = alpha + ar_mean + ma_mean, sd = sigma)
+  eps[t] = y[t] - alpha - ma_mean - ar_mean
+}
+plot(1:T,y,type='l')
+```
+
+
+
+# Simulate from an ARIMAX model
+
+```{r, setup arimax}
+p = 1 # Number of autoregressive terms
+d = 0 # Number of differences
+q = 1 # Numner of MA terms
+k = 2 # Number of explanatory variables
+T = 100
+sigma = 1
+alpha = 0
+beta = c(3,1)
+set.seed(123)
+theta = runif(q)
+phi = sort(runif(p),decreasing=TRUE)
+y = rep(NA,T)
+x = matrix(rnorm(T*k),ncol=k,nrow=T)
+y[1:q] = rnorm(q,0,sigma)
+eps = rep(NA,T)
+eps[1:q] = y[1:q] - alpha
+for(t in (q+1):T) {
+  ar_mean = sum( phi * y[(t-1):(t-p)] )
+  ma_mean = sum( theta * eps[(t-q):(t-1)] )
+  reg_mean = sum( x[t,]*beta )
+  y[t] = rnorm(1, mean = alpha + ar_mean + ma_mean + reg_mean, sd = sigma)
+  eps[t] = y[t] - alpha - ma_mean - ar_mean - reg_mean
+}
+plot(1:T,y,type='l')
+```
+
+- Plot the results
+- Change the parameters of the model, and record what happens to the timeseries 
+
+
+## Prediction using ARIMA and ARIMAX
+
+- Fit an ARIMA model to the HADCRUT data
+- predict the next 20 years of the temperature record
+- Use the forcing data to fit an ARIMAX, and compare with the ARIMA prediction
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

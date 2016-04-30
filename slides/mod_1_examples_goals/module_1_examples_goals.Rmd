@@ -21,6 +21,40 @@ output:
 - Can be regular or irregular
 - Usually one value per time
 
+## A short history of time series
+
+__“With one dimension marching along to the regular rhythm of seconds, minutes, hours, days, weeks, months, years, centuries, or millennia, the natural ordering of the time scale gives this design a strength and efficiency of interpretation found in no other graphic arrangement.”__
+
+Edward R. Tufte
+The Visual Display of Quantitative Information
+p. 28
+
+## The first time series example?
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/early_timeseries.jpg" width=60%/></center>
+
+Tenth or eleventh century time series showing the position of the planets with time.
+http://euclid.psych.yorku.ca/SCS/Gallery/milestone/sec2.html
+
+## Skipping forward a bit ...
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/Cruquius-Diagram-eclipse-1732.jpg" width=50%/></center>
+
+Diagram showing the distance of the planets to the earth in 1732, also showing a complete lunar eclipse and a partial solar eclipse in that year
+Nicolaas Kruik 1678 - 1754 Dutch Astronomer & Meteorologist
+
+## Lambert
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/lambert1779-graph.jpg" width=50%/></center>
+
+A graph of solar warming vs. lattitude.  
+Johann Heinrich Lambert 1728 - 1777
+
+## Application to economic data
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/Playfair_TimeSeries-2.png" width=60%/></center>
+Willaim Playfair's trade-balance time-series chart, published in his Commercial and Political Atlas, 1786
+
 ## Time Series Analysis: What's the point?
 
 What do we use time series methods for? Often, we are trying to do at least one of the following:
@@ -31,7 +65,7 @@ What do we use time series methods for? Often, we are trying to do at least one 
 
 ## First, plot the data
 - HadCRUT4 Annual globally averaged surface temperature
-- How do we separate the structural **trend** and the random **noise**?
+- How do we separate the **structure** and the random **noise**?
 ```{r plot hadcrut straight, echo=FALSE}
 hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly))
