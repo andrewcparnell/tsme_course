@@ -11,7 +11,7 @@ Module pre-requisites can be found [here](https://rawgit.com/andrewcparnell/tsme
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | Time series analysis in climatology and ecology: some examples and general goals (DM) [Module 1](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+9:15-10:00 | Time series analysis in climatology and ecology: some examples and general goals (DM) [Module 1](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_1_examples_goals/module_1_examples_goals.html)
 10:00-10:45 | Discussion and coffee 
 10:45-11:30 | An introduction to Bayesian statistics (AP) [Module 2](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_2_intro_bayes/module_2_intro_Bayes.html)
 11:30-12:00 | Discussion and break 
@@ -25,7 +25,7 @@ Time  | Class
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | AR(1) models and Random walks (DM) [Module 4](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+9:15-10:00 | AR(1) models and Random walks (DM) [Module 4](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_4_ar1_random_walks/module_4_ar1_random_walks.html)
 10:00-10:45 | Discussion and coffee 
 10:45-11:30 | MA and ARIMA models (AP) [Module 5](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_5_ma_and_arima/module_5_ma_and_arima.html)
 11:30-12:00 | Discussion and break 
@@ -54,7 +54,7 @@ Time  | Class
 ------------- | ----------------------------------------------------
 9:15-10:00 | Models for continuous time series (AP) [Module 9](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 10:00-10:45 | Discussion and coffee
-10:45-11:30 | Extensions: state space models, change point modelling, and multivariate time series (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+10:45-11:30 | Extensions: state space models and multivariate time series (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
 11:30-12:00 | Break 
 12:00-12:45 | Practical 4: Bring your own data (AP and DM)
 12:45-14:00 | Lunch

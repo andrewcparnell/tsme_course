@@ -1,0 +1,97 @@
+---
+title: 'Module 9: Models for continuous time series'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+library(latex2exp)
+library(R2jags)
+```
+
+
+## Learning outcomes
+
+- Understand the differences between continuous and discrete time series
+- Understand the basics of Brownian motion
+- Extend the AR model to the Ornstein Uhlenbeck process
+- Ito formulation vs Euler-Maruyama methods
+- Forecasting and interpolation for continuous time models
+- Fit multiple change point models and compare them with DIC
+
+Relevant JAGS file:
+```
+jags_autoregressive.R
+jags_BM.R
+jags_OU.R
+jags_changepoint.R
+```
+
+## Discrete time vs continuous time
+
+- Almost all of the models we have studied so far assume that time is discrete, e.g. $t=1, 2, 3, \ldots$, or year = $1850, 1851, \ldots$. 
+- Many real world time series do not work on 
+
+## Some models for continuous time we have already met
+
+
+## Brownian motion
+
+
+## JAGS code for simple Brownian Motion
+
+
+## Example: ice core data
+
+
+## Revision of the AR(1) process
+
+
+## The Ornstein Uhlenbeck process
+
+
+## JAGS code for the OU process
+
+
+## Example: ice core data
+
+
+## Comparing between BM and OU
+
+
+## Ito vs Euler-Marayuma forms
+
+
+## Forecasting and interpolation for the BM and OU processes
+
+
+## Introduction to change point models
+
+
+## Dscontinuous change point models
+
+
+## JAGS code
+
+
+## Continuous change point models
+
+
+## JAGS code 
+
+
+## Example: change points of global temperature
+
+
+## Plotting the change point
+
+
+## Summary
+
+
