@@ -1,0 +1,276 @@
+---
+title: 'Module 1: Time series for Ecologists and Climatologists: examples & goals'
+author: "Doug McNeall, Met Office"
+output:
+  ioslides_presentation:
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+## Learning outcomes
+
+- Understand key timeseries concepts and features
+- See example timeseries that we'll use on the course
+- Understand the types of analysis that we want to do, and why
+
+
+## What is a time series?
+
+- A collection of data indexed by (strictly increasing) time
+- Can be regular or irregular
+- Usually one value per time
+
+## A short history of time series
+
+__“With one dimension marching along to the regular rhythm of seconds, minutes, hours, days, weeks, months, years, centuries, or millennia, the natural ordering of the time scale gives this design a strength and efficiency of interpretation found in no other graphic arrangement.”__
+
+Edward R. Tufte
+The Visual Display of Quantitative Information
+p. 28
+
+## The first time series example?
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/early_timeseries.jpg" width=60%/></center>
+
+Tenth or eleventh century time series showing the position of the planets with time.
+http://euclid.psych.yorku.ca/SCS/Gallery/milestone/sec2.html
+
+## Skipping forward a bit ...
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/Cruquius-Diagram-eclipse-1732.jpg" width=50%/></center>
+
+Diagram showing the distance of the planets to the earth in 1732, also showing a complete lunar eclipse and a partial solar eclipse in that year
+Nicolaas Kruik 1678 - 1754 Dutch Astronomer & Meteorologist
+
+## Lambert
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/lambert1779-graph.jpg" width=50%/></center>
+
+A graph of solar warming vs. lattitude.  
+Johann Heinrich Lambert 1728 - 1777
+
+## Application to economic data
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/Playfair_TimeSeries-2.png" width=60%/></center>
+Willaim Playfair's trade-balance time-series chart, published in his Commercial and Political Atlas, 1786
+
+## Time Series Analysis: What's the point?
+
+What do we use time series methods for? Often, we are trying to do at least one of the following:
+
+1. Description: what is going on?
+2. Understanding: how is it going on, and why?
+3. Prediction: What is going to go on next?
+
+## First, plot the data
+- HadCRUT4 Annual globally averaged surface temperature
+- How do we separate the **structure** and the random **noise**?
+```{r plot hadcrut straight, echo=FALSE}
+hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
+with(hadcrut,plot(Year,Anomaly))
+# Is there a trend? (this could just be a slice from a random process, right?)
+# If yes, why is there a trend
+# In that case, what will happen next year? How about in 2100?
+```
+
+## First, plot the data
+- Using a line plot gives a slightly different impression.
+```{r plot hadcrut l, echo=FALSE}
+hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
+with(hadcrut,plot(Year,Anomaly,type='l'))
+# perhaps plot a smoothed version?
+```
+
+
+## Example 2 - Sea level rise
+- Church and White
+- There appears relatively less noise in this data compared to the trend
+```{r load sea level data, echo=FALSE}
+candw = read.csv('~/GitHub/tsme_course/data/church_and_white_global_tide_gauge.csv')
+with(candw,plot(year_AD,sea_level_m,type='l'))
+```
+
+## Changes in variability & Heteroskedasticity
+- This AirPassengers data set shows **heteroskedasticity**
+```{r plot AirPassengers, echo=FALSE}
+plot(AirPassengers)
+```
+
+## Example - GISP2 stable isotope ratios in Greenland ice
+- This data shows **heteroskedacity** and **regime changes**
+```{r load gisp2 data, echo=FALSE}
+gisp2 = read.table('~/GitHub/tsme_course/data/gispd18o_raw.txt', na.strings = '999999')
+colnames(gisp2) = c('Depth','d18o','Age')
+with(gisp2,plot(Age,d18o,type='l'))
+```
+
+
+
+## Changes in variability & Heteroskedascticity
+Monthly NH sea ice Anomaly from 1978 to present.
+
+## Seasonal (and longer) cycles, periodicity
+
+```{r plot ldeaths, echo=TRUE}
+plot(ldeaths)
+#with(ldeaths,plot(Age,d18o,type='l'))
+```
+
+
+
+## HADCET
+Monthly Central England Temperature (CET) from 1659 
+
+* Seasonality [on short term] & trend?
+
+## Sea ice from 1953
+
+* Trend, seasonality, heteroskedacity?, break points?
+
+
+
+
+
+## Unpredictability and stochasticity
+
+D18O? Global financial crash? Regime changes
+
+## Autocorrelation and memory
+- **Autocorrelation** is the correlation of a random process **with itself** at a different time.
+- some created examples here
+
+## Stationarity
+ - In a **stationary** timeseries **mean**, **variance** and **autocorrelation** structure do not change over time.
+
+## Differencing
+- A timeseries of the differences between the values.
+- Differencing can be used used to make a non-stationary trend stationary.
+
+## Other important concepts
+
+* Stationarity
+* Lag
+* Detrending and differencing
+* Seasonality removal
+* Smoothing & filtering
+* Stochastic processes & Random walks
+
+## What kind of analysis might we want to do?
+
+## Understanding an underlying system
+
+## Prediction of the system
+
+## Common mistakes
+
+
+## Who was Bayes?
+
+*An essay towards solving a problem on the doctrine of chances* (1763)
+
+$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
+
+<center><img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Thomas_Bayes.gif" width=40%/></center>
+
+## What is Bayesian statistics?
+
+- Bayesian statistics is based on an interpretation of Bayes' theorem
+- All quantities are divided up into _data_ (i.e. things which have been observed) and _parameters_ (i.e. things which haven't been observed)
+- We use Bayes' interpretation of the theorem to get the _posterior probability distribution_, the probability of the unobserved given the observed
+- Used now in almost all areas of statistical application (finance, medicine, environmetrics, gambling, etc, etc)
+
+## What is Bayes' theorem?
+
+Bayes' theorem can be written in words as:
+
+$$\mbox{posterior is proportional to likelihood times prior}$$
+... or ...
+$$\mbox{posterior} \propto \mbox{likelihood} \times \mbox{prior}$$
+  
+Each of the three terms _posterior_, _likelihood_, and _prior_ are _probability distributions_ (pdfs).
+
+In a Bayesian model, every item of interest is either data (which we will write as $x$) or parameters (which we will write as $\theta$). Often the parameters are divided up into those of interest, and other _nuisance parameters_
+
+## Bayes' theorem in more detail
+
+Bayes' equation is usually written mathematically as:
+$$p(\theta|x) \propto p(x|\theta) \times p(\theta)$$
+or, more fully:
+$$p(\theta|x) = \frac{p(x|\theta) \times p(\theta)}{p(x)}$$
+
+- The _posterior_ is the probability of the parameters given the data
+- The _likelihood_ is the probability of observing the data given the parameters (unknowns)
+- The _prior_ represents external knowledge about the parameters
+
+
+## A simple example
+
+- An ecologist listens for the calls of the southern brown tree frog (_Litoria ewingi_)
+- She wants to know the mean length of the calls
+- We will assume that the standard deviation of the calls is known to be 0.8 seconds
+- She hears a call of length 3.1 seconds
+- A study conducted the previous year estimated the mean to be 2.3 seconds with standard error 0.5 seconds
+
+If we assume that the calls she hears are normally distributed then $x$ follows a normal distribution with mean $\theta$ and standard deviation 0.8s, written $x|\theta \sim N(\theta,0.8^2)$. The prior distribution is $\theta \sim N(2.3,0.5^2)$.
+
+## Simple example (continued) {.smaller}
+
+```{r,echo=FALSE,fig.align='center'}
+theta = seq(0,6,length=100)
+likelihood = dnorm(3.1,mean=theta,sd=0.8)
+prior = dnorm(theta,mean=2.3,sd=0.5)
+par(mar=c(3,3,2,1), mgp=c(2,.7,0), tck=-.01,las=1)
+plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.06),xlab='theta (mean length of call in seconds)')
+lines(theta,prior/sum(prior),col='red')
+posterior = prior*likelihood
+lines(theta,posterior/sum(posterior),col='blue')
+legend('topright',legend=c('Likelihood','Prior','Posterior'),col=c('black','red','blue'),lty=1)
+true_post = posterior/sum(posterior)
+```
+
+Note: posterior mean is `r round(sum(theta*true_post),2)` seconds and standard deviation is `r round(sqrt(sum(theta^2*true_post)-sum(theta*true_post)^2),2)` seconds. 
+
+## Simple example (continued)
+
+Code used to produce previous plot:
+```{r,eval=FALSE}
+# Create grid for theta
+theta = seq(0,6,length=100)
+# Evalutate prior, likelihood and posterior
+prior = dnorm(theta,mean=2.3,sd=0.5)
+likelihood = dnorm(3.1,mean=theta,sd=0.8)
+posterior = prior*likelihood
+# Produce plot
+plot(theta,likelihood/sum(likelihood),type='l',
+     ylab='Probability',ylim=c(0,0.06))
+lines(theta,prior/sum(prior),col='red')
+lines(theta,posterior/sum(posterior),col='blue')
+legend('topright',legend=c('Likelihood','Prior',
+                           'Posterior'),
+       col=c('black','red','blue'),lty=1)
+```
+
+
+
+## Why is this better?
+
+The Bayesian approach has numerous advantages:
+
+- It's easier to build complex models and to analyse the parameters you want directly
+- We automatically obtain the best parameter estimates and their uncertainty from the posterior samples
+- It allows us to get away from (terrible) null hypothesis testing and $p$-values
+
+## Some further reading
+
+- The Bayesian bible: Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2013). _Bayesian Data Analysis_, Third Edition. CRC Press.
+- The MCMC bible: Brooks, S., Gelman, A., Jones, G., & Meng, X. (2011). _Handbook of Markov Chain Monte Carlo_. CRC Press.
+- Something simpler: McCarthy, M. A. (2007). _Bayesian Methods for Ecology_. Cambridge University Press.
+
+## Summary
+
+- Bayesian statistical models involve a likelihood and a prior. These both need to be carefully chosen. From these we create a posterior distribution
+- The likelihood represents the information about the data generating process, the prior represents information about the unknown parameters
+- We usually create and analyse samples from the posterior probability distribution of the unknowns (the parameters) given the knowns (the data)
+- From the posterior distribution we can create means, medians, standard deviations, credible intervals, etc
+
