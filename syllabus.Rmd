@@ -251,18 +251,45 @@ Learning outcomes:
 - Extend the AR model to the Ornstein Uhlenbeck process
 - Ito formulation vs Euler-Maruyama methods
 - Forecasting and interpolation for continuous time models
-- Fit multiple change point models and compare between them
+- Fit different types of change point models
 
 Relevant JAGS file:
 ```
 jags_autoregressive.R (revision)
+jags_BM.R
 jags_OU.R
 jags_changepoint.R
 ```
 
+Slides:
+
+1. Title
+2. Learning outcomes
+3. Discrete time vs continuous time
+4. Some models for continuous time we have already met
+5. Brownian motion
+6. JAGS code for simple Brownian Motion
+7. Example: ice core data
+8. Revision of the AR(1) process
+9. The Ornstein Uhlenbeck process
+10. JAGS code for the OU process
+11. Example: ice core data
+12. Comparing between BM and OU
+13. Ito vs Euler-Marayuma forms
+14. Forecasting and interpolation for the BM and OU processes
+15. Introduction to change point models
+16. Dscontinuous change point models
+17. JAGS code
+18. Continuous change point models
+19. JAGS code 
+20. Example: change points of global temperature
+21. Plotting the change point
+22. Summary
+
+
 ------
 
-# Module 10: Extensions: state space models, change point modelling, and multivariate time series (AP)
+# Module 10: Extensions: state space models, and multivariate time series (AP)
 Friday 13th May 10:45-11:30
 
 Learning outcomes: 
@@ -273,15 +300,38 @@ Learning outcomes:
 
 Relevant JAGS file:
 ```
-jags_changepoint.R
 jags_statespace.R
-jags_multivariate_AR.R
+jags_multivariate_AR.R (not written yet)
 jags_multivariate_statespace.R (not written yet)
 ```
+
+Slides:
+
+1. Title
+2. Learning outcomes
+3. Introduction to state space models
+4. JAGS code for a linear state space model
+5. Priors for state space models
+6. Example: palaeoclimate reconstruction
+7. Palaeoclimate reconstruction results
+8. Introduction to multivariate models
+9. The Vector AR model
+10. JAGS code for the VAR model
+11. Example
+12. Multivariate state-space models
+13. Example: Palaeoclimate reconstruction
+14. Mixing up Gaussian processes and state space models
+15. Co-integrated models
+16. Other types of multivariate model
+17. Multivariate Gaussian processes
+18. Dynamic linear models
+19. Latent factor time series models
+20. Summary
+
+
 
 ------
 
 # Practical 4: Bring your own data (AP and DM)
 Friday 13th May 12:00-13:30
-
 

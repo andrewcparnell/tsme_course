@@ -45,10 +45,10 @@ model
 {
   # Likelihood
   for (i in 2:T) {
-    y[i] ~ dnorm( alpha * (t[i] - t[i-1]) + y[i-1], tau[i] )
-    tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
+  y[i] ~ dnorm( alpha * (t[i] - t[i-1]) + y[i-1], tau[i] )
+  tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
   }
-
+  
   # Priors
   alpha ~ dnorm(0.0,0.01)
   sigma ~ dunif(0.0,10.0)
@@ -85,7 +85,7 @@ with(ice,plot(Age,Del.18O,type='l'))
 
 # Set up the data
 real_data = with(ice,
-                 list(y = Del.18O, T = T, t = Age))
+                 list(y = Del.18O, T = nrow(ice), t = Age))
 
 # Run the model
 real_data_run = jags(data = real_data,
@@ -113,19 +113,19 @@ y_all[o][1:10]
 
 # Create new data set
 real_data_2 = with(ice,
-                 list(y = y_all[o], T = length(y_all), t = t_all[o]))
+                   list(y = y_all[o], T = length(y_all), t = t_all[o]))
 
 # Save all the values of y
 model_parameters = 'y'
 
 # Run the model - if the below is slow to run try reducing the time grid above
 real_data_run_2 = jags(data = real_data_2,
-                     parameters.to.save = model_parameters,
-                     model.file=textConnection(model_code),
-                     n.chains=4,
-                     n.iter=1000,
-                     n.burnin=200,
-                     n.thin=2)
+                       parameters.to.save = model_parameters,
+                       model.file=textConnection(model_code),
+                       n.chains=4,
+                       n.iter=1000,
+                       n.burnin=200,
+                       n.thin=2)
 
 plot(real_data_run_2)
 

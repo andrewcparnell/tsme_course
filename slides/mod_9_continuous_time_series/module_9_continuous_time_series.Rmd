@@ -1,0 +1,363 @@
+---
+title: 'Module 9: Models for continuous time series'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+library(latex2exp)
+library(R2jags)
+```
+
+
+## Learning outcomes
+
+- Understand the differences between continuous and discrete time series
+- Understand the basics of Brownian motion
+- Extend the AR model to the Ornstein Uhlenbeck process
+- Ito formulation vs Euler-Maruyama methods
+- Forecasting and interpolation for continuous time models
+- Fit different types of change point models
+
+Relevant JAGS file:
+```
+jags_autoregressive.R
+jags_BM.R
+jags_OU.R
+jags_changepoint.R
+```
+
+## Discrete time vs continuous time
+
+- Almost all of the models we have studied so far assume that time is discrete, e.g. $t=1, 2, 3, \ldots$, or year = $1850, 1851, \ldots$. 
+- Many real world time series do not work on discrete times scales. Instead the time value $t$ might be any integer or non-integer value.
+
+- Continuous time series might occur because:
+  
+  1. The data are recorded in irregular time, e.g. the ice core data
+  2. The data contain many missing values. We could use the `NA` trick but if there are too many this becomes impractical
+  
+- Really all time series are recorded in continuous time, we just sometimes approximate them onto a grid. There can be lots of subtle issues when data are aggregated incorrectly
+
+## Some models for continuous time we have already met
+
+We have actually already met quite a few methods which work for data recorded in continuous time:
+
+  1. Linear and logistic regression 
+  2. Fourier Methods
+  3. Gaussian processes
+
+However for all of these it could be argued that they are not true time series models since they borrow predictive strength from both the future and the past
+
+## Brownian motion
+
+- Perhaps the simplest of all continuous time series models is that of _Brownian Motion_ (BM)
+- As we are now working in continuous time we write the time series as $y(t)$ rather than $y_t$ to allow for $y$ to be a function of continuous $t$
+- The likelihood for BM is:
+$$y(t) - y(t - s) \sim N(0, s \sigma^2)$$
+where $s$ is any positive value. Note that if $s$ is 1 we have the standard random walk model 
+- You can also add in a _drift_ parameter and re-write the model as:
+$$y(t) - y(t - s) \sim N(\alpha s, s \sigma^2)$$
+
+## JAGS code for simple Brownian Motion
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (i in 2:T) {
+  y[i] ~ dnorm( alpha * (t[i] - t[i-1]) + y[i-1], tau[i] )
+  tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
+  }
+  
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+- You can alternatively write this in terms of differences of $y$ and $t$
+
+## Example: ice core data
+
+```{r, include = FALSE}
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
+
+# Set up the data
+real_data = with(ice,
+                 list(y = Del.18O, T = nrow(ice), t = Age))
+
+# Choose the parameters to watch
+model_parameters =  c("alpha","sigma")
+
+# Run the model
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+```
+
+```{r}
+par(mfrow=c(1,2))
+hist(real_data_run$BUGSoutput$sims.list$alpha, breaks=30)
+hist(real_data_run$BUGSoutput$sims.list$sigma, breaks=30)
+```
+
+## Interpolation
+
+- We can use the NA trick to create a new set of times at which we wish to predict $\delta^{18}$O
+- We need to be careful that we don't give JAGS any time values which have 0 differences as this will cause it to crash
+
+```{r}
+t_ideal = seq(0+0.01,max(ice$Age)+0.01, by = 100) # 100 year regular grid
+# Note added on 0.01 to the above to stop there being some zero time differences
+y_ideal = rep(NA, length(t_ideal))
+t_all = c(ice$Age, t_ideal)
+y_all = c(ice$Del.18O, y_ideal)
+o = order (t_all)
+t_all[o][1:10]
+y_all[o][1:10]
+```
+
+## Interpolation plots
+```{r, include=FALSE}
+# Create new data set
+real_data_2 = with(ice,
+                   list(y = y_all[o], T = length(y_all), t = t_all[o]))
+
+# Save all the values of y
+model_parameters = 'y'
+
+# Run the model - if the below is slow to run try reducing the time grid above
+real_data_run_2 = jags(data = real_data_2,
+                       parameters.to.save = model_parameters,
+                       model.file=textConnection(model_code),
+                       n.chains=4,
+                       n.iter=1000,
+                       n.burnin=200,
+                       n.thin=2)
+```
+
+```{r}
+pick_out = which( is.na(real_data_2$y) )
+pred_y = apply(real_data_run_2$BUGSoutput$sims.list$y[, pick_out], 2, 'mean')
+plot(t_ideal, pred_y, type = 'l')
+```
+
+## The Ornstein Uhlenbeck process
+
+- One extension of Brownian Motion is called the _Ornstein-Uhlenbeck_ (OU) process
+- It can also be thought of as the continuous time version of the AR(1) process
+- The likelihood is:
+$$y(t) - y(t-s) \sim N( \theta ( \alpha - y(t-s) ) s, s \sigma^2 )$$
+- It looks very much like the BM model but with an extra parameter $\theta$ which controls the dependence of $y(t)$ on $y(t-s)$ according to how far away it is
+- With a bit of algebra if you set $s=1$ above you end up with the AR(1) model
+- Like the AR(1) model, $\theta$ needs to be between -1 and 1 to be stationary, but in practice can go beyond that range
+
+## JAGS code for the OU process
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (i in 2:T) {
+    y[i] ~ dnorm( theta * (alpha - y[i-1]) * (t[i] - t[i-1]) + y[i-1], tau[i] )
+    tau[i] <- 1/( pow(sigma,2) * (t[i] - t[i-1]) )
+  }
+
+  # Priors
+  alpha ~ dnorm(0, 0.01)
+  theta ~ dunif(0, 100)
+  sigma ~ dunif(0.0, 10.0)
+}
+'
+```
+
+## Example: Monticchio palaeo data
+```{r}
+mont = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/Monticchio_MTCO.csv')
+with(mont, plot(Age, MTCO, type='l'))
+```
+
+## Monticchio output
+
+```{r, echo = FALSE}
+# Remove duplpicate times - model will fail
+dup_times = which(diff(mont$Age)==0)
+mont2 = mont[-dup_times,]
+
+# Use the trick in jags_BM to estimate the model and get predictions on a new
+# grid
+t_ideal = seq(100+0.5,max(mont2$Age)+0.5, by = 500) # 500 year regular grid
+# Note added on 0.01 to the above to stop there being some zero time differences
+y_ideal = rep(NA, length(t_ideal))
+t_all = c(mont2$Age, t_ideal)
+y_all = c(mont2$MTCO, y_ideal)
+o = order (t_all)
+
+# Create new data set
+real_data = with(mont,
+                 list(y = y_all[o], T = length(y_all), t = t_all[o]))
+
+# Save all the values of y
+model_parameters = c('y', 'alpha', 'theta', 'sigma')
+
+# Run the model - if the below is slow to run try reducing the time grid above
+real_data_run = jags(data = real_data,
+                       parameters.to.save = model_parameters,
+                       model.file=textConnection(model_code),
+                       n.chains=4,
+                       n.iter=10000,
+                       n.burnin=2000,
+                       n.thin=8)
+
+par(mfrow=c(1,3))
+hist(real_data_run$BUGSoutput$sims.list$alpha, breaks=30)
+hist(real_data_run$BUGSoutput$sims.list$theta, breaks=30)
+hist(real_data_run$BUGSoutput$sims.list$sigma, breaks=30)
+```
+
+
+## Ito vs Euler-Marayuma forms
+
+- You will often see, e.g. the BM model written as:
+$$dy = \alpha dt + \sigma dW(t)$$
+- This is sometimes called _Ito_ form and is a stochastic differential equation with $W$ a standard BM (i.e. with unit variance 1 and no drift)
+- An alternative is to discretise the equation in _Euler-Marayama_ form:
+$$y(t) - y(t-s) = \alpha s + \sigma ( W(t) - W(t-s) )$$
+- Writing it in this form makes it easier to see the likelihood version we used:
+$$y(t) - y(t - s) \sim N(\alpha s, s \sigma^2)$$
+- The Ito format for the OU process is:
+$$dy = \theta ( \alpha - y ) dt + \sigma dW(t)$$
+
+## Introduction to change point models
+
+- Another method commonly used for both discrete and continuous time stochastic processes is that change point modelling
+- The goal is to find one or more _change points_; times at which the time series changes in some structural way
+- We will study two versions of change point models; _discontinuous_, where there can be instantaneous jumps in the mean, and _continuous_ where there can be a jump in the rate of change of the mean, but subsections must link together
+
+## Dscontinuous change point regression models
+
+- We will write the overall model as:
+$$y(t) \sim N(\mu(t), \sigma^2)$$
+- For the discontinuous change point regression (DCPR) model with one change point
+$$\mu(t) = \left\{ \begin{array}{ll} \alpha_1 & \mbox{ if } t < t_1  \\
+\alpha_2 & \mbox{ if } t>=t_1 \end{array} \right.$$
+- Here, $\alpha_1$ and $\alpha_2$ are the mean before and after the change point respectively, and $t_1$ is a parameter which gives the time of the change in the mean
+- In JAGS we use the `step` function to determine which side of the change point a data point is currently on
+
+## JAGS code
+
+```{r}
+model_code_DCPR_1="
+model
+{
+  # Likelihood
+  for(i in 1:T) {
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- alpha[J[i]]
+    # This is the clever bit - only pick out the right change point when above t_1
+    J[i] <- 1 + step(t[i] - t_1)
+  }
+
+  # Priors
+  alpha[1] ~ dnorm(0.0, 0.01)
+  alpha[2] ~ dnorm(0.0, 0.01)
+  t_1 ~ dunif(t_min, t_max)
+
+  tau <- 1/pow(sigma, 2)
+  sigma ~ dunif(0, 100)
+}
+"
+```
+
+## Continuous change point regression models
+
+- The continuous change point regression model (CCPR) forces the segments to join together
+- The mean for this version is:
+$$\mu(t) = \left\{ \begin{array}{ll} \alpha + \beta_1 * (t - t_1) & \mbox{ if } t < t_1  \\
+\alpha + \beta_2 * (t - t_1) & \mbox{ if } t>=t_1 \end{array} \right.$$
+- In this version $\beta_1$ and $\beta_2$ are the rates of change before and after the change point, $\alpha$ is the mean value of $y$ at the change point
+- Code for multiple change point models is given in the R code `jags_changepoint.R`. We can compare between them using DIC
+
+## JAGS code for CCPR
+```{r}
+model_code_CCPR_1="
+model
+{
+  # Likelihood
+  for(i in 1:T) {
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- alpha + beta[J[i]]*(t[i]-t_1)
+    # This is the clever bit - only pick out the right change point when above t_1
+    J[i] <- 1 + step(t[i] - t_1)
+  }
+
+  # Priors
+  alpha ~ dnorm(0.0, 0.01)
+  beta[1] ~ dnorm(0.0, 0.01)
+  beta[2] ~ dnorm(0.0, 0.01)
+  t_1 ~ dunif(t_min, t_max)
+
+  tau <- 1/pow(sigma, 2)
+  sigma ~ dunif(0, 100)
+}
+"
+```
+
+## Example: change points of global temperature
+
+```{r, echo = FALSE, message=FALSE}
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+
+# Set up the data
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut),
+                      y = hadcrut$Anomaly,
+                      t = hadcrut$Year,
+                      t_min = min(hadcrut$Year),
+                      t_max = max(hadcrut$Year)))
+
+model_parameters =  c("t_1", "alpha", "beta", "sigma")
+
+# Run the model - this can struggle to converge so needs a longer run
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code_CCPR_1),
+                     n.chains=4,
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
+
+with(hadcrut,
+     plot(Year,
+          Anomaly,
+          type='l'))
+t_1_mean = mean(real_data_run$BUGSoutput$sims.list$t_1)
+abline(v = t_1_mean, col='red')
+alpha_mean = mean(real_data_run$BUGSoutput$sims.list$alpha)
+beta_1_mean = mean(real_data_run$BUGSoutput$sims.list$beta[,1])
+beta_2_mean = mean(real_data_run$BUGSoutput$sims.list$beta[,2])
+with(hadcrut,
+     lines(Year[Year<t_1_mean], alpha_mean + beta_1_mean * ( Year[Year<t_1_mean] - t_1_mean ) ) )
+with(hadcrut,
+     lines(Year[Year>=t_1_mean], alpha_mean + beta_2_mean * ( Year[Year>=t_1_mean] - t_1_mean ) ) )
+```
+
+## Summary
+
+- We have covered some methods for continuous time series including Brownian Motion and Ornstein-Uhlenbeck
+- These are extensions of some of the discrete time methods we have already met, such as the random walk and the AR(1) process
+- We have looked at how these models can be written out in Ito and Euler-Marayama format
+- We have covered discontinuous and continuous change point models, and shown how they apply to the global temperature series
+
