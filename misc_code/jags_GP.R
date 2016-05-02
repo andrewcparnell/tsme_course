@@ -38,7 +38,7 @@ library(MASS) # Useful for mvrnorm function
 # Simulate data -----------------------------------------------------------
 
 # Some R code to simulate data from the above model
-T = 100
+T = 20 # can take to T = 100 but fitting gets really slow ...
 alpha = 0
 sigma = 0.01
 tau = 1
@@ -134,6 +134,7 @@ pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
 
 # Plot output
 plot(t,y)
+points(t_new, pred_mean, col='red')
 lines(t_new, pred_mean, col='red')
 
 pred_low = pred_mean - 1.95 * sqrt(diag(pred_var))
