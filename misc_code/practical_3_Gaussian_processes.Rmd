@@ -1,0 +1,282 @@
+---
+title: "Practical 3 - Gaussian processes for time series"
+author: "Doug McNeall"
+date: "1 May 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Welcome to Practical 3, on using JAGS to fit Gaussian process models for time series analysis. In this practical we'll
+
+- Simulate some data from a Gaussian process, and fit an approriate model using JAGS
+- Fit a GP model to some real data, and make some predictions
+
+You should follow and run the commands shown in the grey boxes below. At various points you will see a horizontal line in the text which indicates a question you should try to answer, like this:
+
+***
+
+What words does the following command print to the console?
+```{r,results='hide'}
+print("Hello World")
+```
+
+***
+
+If you get stuck, please get our attention and we will try to help! There are no prepared answers to these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
+
+You can run the code from these practicals by loading up the `.Rmd` file in the same directory in Rstudio. This is an R markdown document containing all the text. Feel free to add in your own answers, or edit the text to give yourself extra notes. You can also run the code directly by highlighting the relevant code and clicking `Run`.
+
+# Gaussian processes for time series analysis
+
+## Simulate from a Gaussian process (GP)
+
+First, clear up the environment and load some useful libraries.
+```{r,include=TRUE, message=FALSE}
+rm(list=ls())
+library(R2jags)
+library(MASS) # Useful for mvrnorm function
+```
+
+We'll simualte some data from a GP.
+
+$$ y \sim MVN(\mu, \Sigma)$$
+$$\mu_{t} = \alpha$$
+$\Sigma$ is a covariance matrix where 
+$$\Sigma_{ij} = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
+if $i \neq j$ and 
+$$\Sigma_{ij} = \tau^2 +\sigma^2$$
+if $i=j$
+
+We can translate that notation into R code:
+
+```{r, include=TRUE}
+# y(t): Response variable at time t, defined on continuous time
+# y: vector of all observations
+# alpha: Overall mean parameter
+# sigma: residual standard deviation parameter (sometimes known in the GP world as the nugget)
+# rho: decay parameter for the GP autocorrelation function
+# tau: GP standard deviation parameter
+```
+
+```{r, include=TRUE}
+# Likelihood:
+# y ~ MVN(Mu, Sigma)
+# where MVN is the multivariate normal distribution and
+# Mu[t] = alpha
+# Sigma is a covariance matrix with:
+# Sigma_{ij} = tau^2 * exp( -rho * (t_i - t_j)^2 ) if i != j
+# Sigma_{ij} = tau^2 + sigma^2 if i=j
+# The part exp( -rho * (t_i - t_j)^2 ) is known as the autocorrelation function
+
+# Prior
+# alpha ~ N(0,100)
+# sigma ~ U(0,10)
+# tau ~ U(0,10)
+# rho ~ U(0.1, 5) # Need something reasonably informative here
+```
+
+Here is some R code to simulate data from the Gaussian process. Run and plot the simulated data.
+```{r, include=TRUE}
+T = 20 # can take to e.g T = 100 but fitting gets really slow ...
+alpha = 0 # default is 0
+sigma = 0.03 # default is 0.01
+tau = 1
+rho = 1
+set.seed(123) # ensure reproducablility
+t = sort(runif(T))
+Sigma = sigma^2 * diag(T) + tau^2 * exp( - rho * outer(t,t,'-')^2 )
+y = mvrnorm(1,rep(alpha,T), Sigma)
+plot(t,y)
+```
+
+***
+
+Change the paramaters ```T, sigma, tau``` and ```rho``` and see how the output changes. You might want to choose a random seed.
+
+***
+
+Load the GP model code for JAGS into R
+```{r, include=TRUE}
+# Jags code to fit the model to the simulated data
+model_code = '
+model
+{
+  # Likelihood
+  y ~ dmnorm(Mu, Sigma.inv)
+  Sigma.inv <- inverse(Sigma)
+  
+  # Set up mean and covariance matrix
+  for(i in 1:T) {
+    Mu[i] <- alpha
+    Sigma[i,i] <- pow(sigma, 2) + pow(tau, 2)
+  
+    for(j in (i+1):T) {
+      Sigma[i,j] <- pow(tau, 2) * exp( - rho * pow(t[i] - t[j], 2) )
+      Sigma[j,i] <- Sigma[i,j]
+    }
+  }
+  
+  alpha ~ dnorm(0, 0.01)
+  sigma ~ dunif(0, 10) # default dunif(0,10)
+  tau ~ dunif(0, 10)
+  rho ~ dunif(0.1, 5)
+  
+} 
+'
+```
+
+Set up the data as a list object, and choose the parameters that we'd like to watch.
+
+```{r, include=TRUE, message=FALSE}
+# Set up the data
+model_data = list(T = T, y = y, t = t)
+  
+# Choose the parameters to watch
+model_parameters =  c("alpha", "sigma", "tau", "rho")
+  
+# Run the model - This can be slow with lots of data
+model_run = jags(data = model_data,
+                   parameters.to.save = model_parameters,
+                   model.file=textConnection(model_code),
+                   n.chains=4, # Number of different starting positions
+                   n.iter=1000, # Number of iterations
+                   n.burnin=200, # Number of iterations to remove at start
+                   n.thin=2) # Amount of thinning
+```
+
+***
+
+Print the ```model_run``` and check for convergence.
+Plot histograms of samples from ```alpha, sigma, tau``` and ```rho``` to see how well they are estimated.
+
+***
+
+```{r, include=TRUE}
+alpha = model_run$BUGSoutput$sims.list$alpha
+tau = model_run$BUGSoutput$sims.list$tau
+sigma = model_run$BUGSoutput$sims.list$sigma
+rho = model_run$BUGSoutput$sims.list$rho
+par(mfrow = c(2,2))
+hist(alpha, breaks=30)
+hist(tau, breaks=30)
+hist(sigma, breaks=30)
+hist(rho, breaks=30)
+```
+
+Now we'll create some predictions of new values at new times
+Now create some predictions of new values at new times t^new
+These are bsed on the formula:
+y^new | y ~ N( Mu_new + Sigma_new^T solve(Sigma, y - Mu), Sigma_* - Sigma_new^T solve(Sigma, Sigma_new)
+where: 
+Mu^new[t] = alpha  
+Sigma_new[i,j] = tau^2 * exp( -rho * (t^new_i - t_j)^2 )
+Sigma_*[i,j] = tau^2 * exp( -rho * (t^new_i - t^new_j)^2 ) if i != j
+
+
+```{r, include=TRUE}
+T_new = 20
+t_new = seq(0,1,length=T_new)
+Mu = rep(mean(alpha), T)
+Mu_new = rep(mean(alpha), T_new)
+Sigma_new = mean(tau)^2 * exp( -mean(rho) * outer(t, t_new, '-')^2 )
+Sigma_star = mean(sigma)^2 * diag(T_new) + mean(tau)^2 * exp( - mean(rho) * outer(t_new,t_new,'-')^2 )
+Sigma = mean(sigma)^2 * diag(T) + mean(tau)^2 * exp( - mean(rho) * outer(t,t,'-')^2 )
+
+# Use fancy equation to get predictions
+pred_mean = Mu_new + t(Sigma_new)%*%solve(Sigma, y - Mu)
+pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
+```
+
+***
+
+Plot the mean prediction, and 95% CI
+
+***
+
+```{r, include=TRUE}
+par(mfrow = c(1,1))
+plot(t,y)
+lines(t_new, pred_mean, col='red')
+
+pred_low = pred_mean - 1.95 * sqrt(diag(pred_var))
+pred_high = pred_mean + 1.95 * sqrt(diag(pred_var))
+lines(t_new, pred_low, col = 'red', lty = 2)
+lines(t_new, pred_high, col = 'red', lty = 2)
+```
+
+***
+
+Rather than the mean, sample a number of possible values of each parameter from their joint posterior distribution. Plot them as lines on the graph.
+
+***
+
+
+***
+
+Extend ```t``` out beyond the limits of where there are observation (i.e. t>1). What happens to the prediction mean and the uncertainty?
+
+***
+
+```{r, include=TRUE}
+T_ext = 20
+t_ext = seq(1,1.3,length=T_ext)
+Mu = rep(mean(alpha), T)
+Mu_ext = rep(mean(alpha), T_ext)
+Sigma_ext = mean(tau)^2 * exp( -mean(rho) * outer(t, t_ext, '-')^2 )
+Sigma_ext_star = mean(sigma)^2 * diag(T_ext) + mean(tau)^2 * exp( - mean(rho) * outer(t_ext,t_ext,'-')^2 )
+Sigma = mean(sigma)^2 * diag(T) + mean(tau)^2 * exp( - mean(rho) * outer(t,t,'-')^2 )
+
+# Use fancy equation to get predictions
+ext_mean = Mu_new + t(Sigma_ext)%*%solve(Sigma, y - Mu)
+ext_var = Sigma_ext_star - t(Sigma_ext)%*%solve(Sigma, Sigma_ext)
+ext_low = ext_mean - 1.95 * sqrt(diag(ext_var))
+ext_high = ext_mean + 1.95 * sqrt(diag(ext_var))
+
+par(mfrow = c(1,1))
+plot(t,y, xlim = c(0,1.3), ylim = range(y, ext_high, ext_low))
+
+# plot the interpolated best estimate and uncertainty
+lines(t_new, pred_mean, col = 'red', lty = 2)
+lines(t_new, pred_low, col = 'red', lty = 2)
+lines(t_new, pred_high, col = 'red', lty = 2)
+
+# plot the extrapolated best estimate and uncertainty
+lines(t_ext, ext_mean, col='blue')
+lines(t_ext, ext_low, col = 'blue', lty = 2)
+lines(t_ext, ext_high, col = 'blue', lty = 2)
+```
+
+## Notes
+
+- Find a sparser example, and sample from the posterior to get an idea how the GP goes.
+
+***
+
+Fit a Gaussian process to the Nile data by altering the GP model code. The Nile data is one of the standard R data sets. You can find out about it by typing ```?Nile``` into the console.
+
+You might want to change the data from a time series object using```as.vector(Nile)```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

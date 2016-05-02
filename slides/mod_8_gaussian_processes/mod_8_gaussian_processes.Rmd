@@ -1,0 +1,63 @@
+---
+title: "Module 8 - Gaussian processes for time series analysis"
+author: "Doug McNeall"
+date: "1 May 2016"
+output: 
+  ioslides_presentation: 
+    transition: slower
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## What is a Gaussian process?
+
+- A distribution **conditioned** on observed data
+
+- Formally, a Gaussian process generates data located throughout some domain such that any finite subset of the range follows a multivariate Gaussian distribution (Ebden 2008) http://www.robots.ox.ac.uk/~mebden/reports/GPtutorial.pdf
+
+## The multivariate Normal distribution for GPs
+
+- Start with a 2-dimensional normal distribution, with the shape defined by a 2x2 covariance matrix.
+
+## The multivariate Normal distribution for GPs
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn1.jpg" width=70%/></center>
+
+## The multivariate Normal distribution for GPs
+
+- An observation on one dimension changes distribution of the other (and reduces uncertainty).
+- The conditional distribution $p(x_{2}|x_{1}=x)$ is different from the marginal.
+
+## The multivariate Normal distribution for GPs
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn2.jpg" width=70%/></center>
+
+
+## Extend to a two-observation time series
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts1.jpg" width=70%/></center>
+
+## An observation on $x_1$ changes the conditional ditribution for $x_2$
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts2.jpg" width=70%/></center>
+
+## Or for a longer time series
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts3.jpg" width=70%/></center>
+
+## We can extend to continuous time
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts4.jpg" width=70%/></center>
+
+## Choices of covariance function
+
+## Advantages of using GPs
+
+## Sampling from the posterior distribution
+
+## Fitting GPs in JAGS
+
+
