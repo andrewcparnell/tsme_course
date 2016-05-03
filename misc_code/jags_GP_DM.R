@@ -159,11 +159,11 @@ for(i in 1500:1600){
 
 
 
-# Fit a a sine wave with noise
+# Fit a a sine wave with a trend and noise
 
 T = 20
 t = 1:T
-y <- rnorm(T,sin(seq(from = 0, to = 10, length.out=T)), 0.1)
+y <- rnorm(T,t/5 + sin(seq(from = 0, to = 10, length.out=T)), 0.3)
 plot(t,y)
 
 # Jags code to fit the model to the simulated data
@@ -187,7 +187,7 @@ model
   
   alpha ~ dnorm(0, 0.01)
   sigma ~ dunif(0, 10) # default dunif(0,10)
-  tau ~ dunif(0, 10)
+  tau ~ dunif(0, 1)
   rho ~ dunif(0.1, 5)
   
 } 
@@ -225,7 +225,7 @@ hist(rho, breaks=30)
 par(mfrow=c(1,1))
 
 # Now create predictions
-T_new = 20
+T_new = 30
 t_new = seq(0,20,length=T_new)
 Mu = rep(mean(alpha), T)
 Mu_new = rep(mean(alpha), T_new)
@@ -239,7 +239,6 @@ pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
 
 # Plot output
 plot(t,y)
-points(t_new, pred_mean, col='red')
 lines(t_new, pred_mean, col='red')
 
 pred_low = pred_mean - 1.95 * sqrt(diag(pred_var))
@@ -248,9 +247,7 @@ lines(t_new, pred_low, col = 'red', lty = 2)
 lines(t_new, pred_high, col = 'red', lty = 2)
 
 
-
-# Take away the nugget from the JAGS code -------------------------------------------
-# to fit the points exactly (doesn't work yet)
+# doesn't work yet ...
 
 T = 20
 t = 1:T
@@ -310,7 +307,7 @@ hist(rho, breaks=30)
 par(mfrow=c(1,1))
 
 # Now create predictions
-T_new = 20
+T_new = 30
 t_new = seq(0,20,length=T_new)
 Mu = rep(mean(alpha), T)
 Mu_new = rep(mean(alpha), T_new)

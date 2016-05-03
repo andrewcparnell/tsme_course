@@ -12,6 +12,34 @@ output:
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+## Bayesian time series analysis
+
+We can start by thinking of time series analysis as a regression problem, with
+
+$$ y(x) = f(x) + \epsilon$$
+
+Where $y(x)$ is the output of interest, $f(x)$ is some function and $\epsilon$ is an additive white noise process.  
+
+We would like to:
+
+1. Evaluate $f(x)$
+2. Find the *probability distribution* of $y^*$ for some $x^*$
+
+We make the assumption that $y$ is ordered by $x$, we fit a curve to the points and extrapolate.
+
+## Bayesian time series analysis
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf1.jpg" width=70%/></center>
+
+## Bayesian time series analysis
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf2.jpg" width=70%/></center>
+
+## Bayesian time series analysis
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf3.jpg" width=70%/></center>
+
+
 ## What is a Gaussian process?
 
 - A distribution **conditioned** on observed data
@@ -52,12 +80,58 @@ knitr::opts_chunk$set(echo = FALSE)
 
 <center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts4.jpg" width=70%/></center>
 
+## The covariance function
+
+The GP relies on the covariance kernel function, which has the general form $k(x_1, x_2)$
+
+We might choose something like
+
+$$k(x_{1}, x_{2}) = \tau^2 exp[- \rho(x_{1}-x_{2})^2]$$
+
+So that the covariance reduces as the distance between $x_1$ and $x_2$ increases, depending on parameter $\rho$.
+
+
+## The maths
+
+$y$ is the vector of observations of $y_t$, a response variable at time $t$. We can model $y$ as drawn from a **multivariate Normal** distribution:
+
+$$ y \sim MVN(\mu, \Sigma)$$
+$\mu$ is some mean function and $\Sigma$ is a covariance matrix where 
+$$\Sigma_{ij} = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
+if $i \neq j$  and 
+$$\Sigma_{ij} = \tau^2 +\sigma^2$$
+if $i=j$ (i.e. on the diagonal).
+
+
+
+##
+
 ## Choices of covariance function
 
+- Squared
+- Straight
+- Matern?
+- Reasons 
+There is some good guidance on choosing correlation functions in the MUCM toolkit:
+http://mucm.aston.ac.uk/MUCM/MUCMToolkit/index.php?page=AltCorrelationFunction.html
+
 ## Advantages of using GPs
+
+- Freer in form than some models
+- Lets the data "speak for itself"
+- Highly flexible, general and can apply to many problems
+- Can get some very good predictions
+
+## Disadvantages of using GPs
+
+- Can be dependent on good priors
+- Can be more difficlut to interpret parameters to understand the underlying model
+- Slow for large data sets (at least in JAGS)
 
 ## Sampling from the posterior distribution
 
 ## Fitting GPs in JAGS
+
+
 
 

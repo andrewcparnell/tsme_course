@@ -1,7 +1,7 @@
 ---
 title: "Practical 3 - Gaussian processes for time series"
-author: "Doug McNeall"
-date: "1 May 2016"
+author: "Doug McNeall & Andrew Parnell"
+date: "12 May 2016"
 output: html_document
 ---
 
@@ -11,20 +11,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Welcome to Practical 3, on using JAGS to fit Gaussian process models for time series analysis. In this practical we'll
+Welcome to Practical 3, on using JAGS to fit Gaussian process (GP) models for time series analysis. In this practical we'll:
 
 - Simulate some data from a Gaussian process, and fit an approriate model using JAGS
-- Fit a GP model to some real data, and make some predictions
+- Fit a GP model to some interesting simulated data, and see how our assumptions about that data change our predictions. 
 
 You should follow and run the commands shown in the grey boxes below. At various points you will see a horizontal line in the text which indicates a question you should try to answer, like this:
 
 ***
-
+**Exercise X**  
 What words does the following command print to the console?
 ```{r,results='hide'}
 print("Hello World")
 ```
-
 ***
 
 If you get stuck, please get our attention and we will try to help! There are no prepared answers to these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
@@ -33,8 +32,6 @@ You can run the code from these practicals by loading up the `.Rmd` file in the 
 
 # Gaussian processes for time series analysis
 
-## Simulate from a Gaussian process (GP)
-
 First, clear up the environment and load some useful libraries.
 ```{r,include=TRUE, message=FALSE}
 rm(list=ls())
@@ -42,15 +39,19 @@ library(R2jags)
 library(MASS) # Useful for mvrnorm function
 ```
 
-We'll simualte some data from a GP.
+## Simulate from a Gaussian process (GP)
+
+We'll simualte some data from a GP. Here is the maths:
+
+$y$ is the vector of observations of $y_t$, a response variable at time $t$. We can model $y$ as drawn from a **multivariate Normal** distribution:
 
 $$ y \sim MVN(\mu, \Sigma)$$
 $$\mu_{t} = \alpha$$
 $\Sigma$ is a covariance matrix where 
 $$\Sigma_{ij} = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
-if $i \neq j$ and 
+if $i \neq j$  and 
 $$\Sigma_{ij} = \tau^2 +\sigma^2$$
-if $i=j$
+if $i=j$ (i.e. on the diagonal).
 
 We can translate that notation into R code:
 
@@ -62,6 +63,8 @@ We can translate that notation into R code:
 # rho: decay parameter for the GP autocorrelation function
 # tau: GP standard deviation parameter
 ```
+
+and
 
 ```{r, include=TRUE}
 # Likelihood:
@@ -80,14 +83,14 @@ We can translate that notation into R code:
 # rho ~ U(0.1, 5) # Need something reasonably informative here
 ```
 
-Here is some R code to simulate data from the Gaussian process. Run and plot the simulated data.
+Here is some R code to simulate data from a Gaussian process. Run and plot the simulated data.
 ```{r, include=TRUE}
-T = 20 # can take to e.g T = 100 but fitting gets really slow ...
+T = 20 # default is 20 can take to e.g T = 100 but fitting gets really slow ...
 alpha = 0 # default is 0
 sigma = 0.03 # default is 0.01
-tau = 1
-rho = 1
-set.seed(123) # ensure reproducablility
+tau = 1 # default is 1
+rho = 1000# default is 1
+#set.seed(123) # ensure reproducablility
 t = sort(runif(T))
 Sigma = sigma^2 * diag(T) + tau^2 * exp( - rho * outer(t,t,'-')^2 )
 y = mvrnorm(1,rep(alpha,T), Sigma)
@@ -95,10 +98,12 @@ plot(t,y)
 ```
 
 ***
-
-Change the paramaters ```T, sigma, tau``` and ```rho``` and see how the output changes. You might want to choose a random seed.
+**Exercise 1**  
+Change the paramaters ```rho, sigma,``` and ```tau``` and see how the output changes. You might want to set the seed (uncomment the line) if you'd like to have the same output each time.
 
 ***
+
+## Fit a GP model to the data using JAGS
 
 Load the GP model code for JAGS into R
 ```{r, include=TRUE}
@@ -121,10 +126,10 @@ model
     }
   }
   
-  alpha ~ dnorm(0, 0.01)
+  alpha ~ dnorm(0, 0.01) # default dnorm(0, 0.01)
   sigma ~ dunif(0, 10) # default dunif(0,10)
-  tau ~ dunif(0, 10)
-  rho ~ dunif(0.1, 5)
+  tau ~ dunif(0, 10) # default dunif(0, 10)
+  rho ~ dunif(0.1, 5) # default dunif(0.1, 5)
   
 } 
 '
@@ -150,7 +155,7 @@ model_run = jags(data = model_data,
 ```
 
 ***
-
+**Exercise 2**  
 Print the ```model_run``` and check for convergence.
 Plot histograms of samples from ```alpha, sigma, tau``` and ```rho``` to see how well they are estimated.
 
@@ -167,6 +172,8 @@ hist(tau, breaks=30)
 hist(sigma, breaks=30)
 hist(rho, breaks=30)
 ```
+
+## Make predictions using the GP model
 
 Now we'll create some predictions of new values at new times
 Now create some predictions of new values at new times t^new
@@ -194,6 +201,7 @@ pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
 
 ***
 
+**Exercise 3**  
 Plot the mean prediction, and 95% CI
 
 ***
@@ -209,15 +217,15 @@ lines(t_new, pred_low, col = 'red', lty = 2)
 lines(t_new, pred_high, col = 'red', lty = 2)
 ```
 
-***
-
-Rather than the mean, sample a number of possible values of each parameter from their joint posterior distribution. Plot them as lines on the graph.
 
 ***
 
+**Exercise 4**  
+Plot the mean prediction, and 95% CI
 
 ***
 
+**Exercise 4**  
 Extend ```t``` out beyond the limits of where there are observation (i.e. t>1). What happens to the prediction mean and the uncertainty?
 
 ***
@@ -232,7 +240,7 @@ Sigma_ext_star = mean(sigma)^2 * diag(T_ext) + mean(tau)^2 * exp( - mean(rho) * 
 Sigma = mean(sigma)^2 * diag(T) + mean(tau)^2 * exp( - mean(rho) * outer(t,t,'-')^2 )
 
 # Use fancy equation to get predictions
-ext_mean = Mu_new + t(Sigma_ext)%*%solve(Sigma, y - Mu)
+ext_mean = Mu_ext + t(Sigma_ext)%*%solve(Sigma, y - Mu)
 ext_var = Sigma_ext_star - t(Sigma_ext)%*%solve(Sigma, Sigma_ext)
 ext_low = ext_mean - 1.95 * sqrt(diag(ext_var))
 ext_high = ext_mean + 1.95 * sqrt(diag(ext_var))
@@ -241,7 +249,7 @@ par(mfrow = c(1,1))
 plot(t,y, xlim = c(0,1.3), ylim = range(y, ext_high, ext_low))
 
 # plot the interpolated best estimate and uncertainty
-lines(t_new, pred_mean, col = 'red', lty = 2)
+lines(t_new, pred_mean, col = 'red', lty = 1)
 lines(t_new, pred_low, col = 'red', lty = 2)
 lines(t_new, pred_high, col = 'red', lty = 2)
 
@@ -251,32 +259,183 @@ lines(t_ext, ext_low, col = 'blue', lty = 2)
 lines(t_ext, ext_high, col = 'blue', lty = 2)
 ```
 
-## Notes
-
-- Find a sparser example, and sample from the posterior to get an idea how the GP goes.
+## Summarise the uncertainty in the mean function
 
 ***
 
-Fit a Gaussian process to the Nile data by altering the GP model code. The Nile data is one of the standard R data sets. You can find out about it by typing ```?Nile``` into the console.
+**Exercise 5** 
+Show the uncertainty in the mean function. Sample a number of possible values of each parameter from their joint posterior distribution. Plot them as lines on the graph.
 
-You might want to change the data from a time series object using```as.vector(Nile)```
+***
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r, include=TRUE}
+# recreate the plot from the previous code chunk
+plot(t,y, xlim = c(0,1.3), ylim = range(y, ext_high, ext_low))
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+
+
+# Take samples from the markov chain to show the possible solutions.
+for(i in 1500:1600){
+  Mu = rep(alpha[i], T)
+  Mu_new = rep(alpha[i], T_new)
+  Sigma_new = tau[i]^2 * exp( -rho[i] * outer(t, t_new, '-')^2 )
+  Sigma_star = sigma[i]^2 * diag(T_new) + tau[i]^2 * exp( - rho[i] * outer(t_new,t_new,'-')^2 )
+  Sigma = sigma[i]^2 * diag(T) + tau[i]^2 * exp( - rho[i] * outer(t,t,'-')^2 )
+  
+  # Use fancy equation to get predictions
+  pred_samp = Mu_new + t(Sigma_new)%*%solve(Sigma, y - Mu)
+  lines(t_new, pred_samp, col='grey')
+}
+  
+#  plot(t,y, xlim = c(0,1.3), ylim = range(y, ext_high, ext_low))
+  
+  for(i in 1:200){
+    T_ext = 20
+    t_ext = seq(1,1.3,length=T_ext)
+    Mu = rep(alpha[i], T)
+    Mu_ext = rep(alpha[i], T_ext)
+    Sigma_ext = tau[i]^2 * exp( -rho[i] * outer(t, t_ext, '-')^2 )
+    Sigma_ext_star = sigma[i]^2 * diag(T_ext) + tau[i]^2 * exp( - rho[i] * outer(t_ext,t_ext,'-')^2 )
+    Sigma = sigma[i]^2 * diag(T) + tau[i]^2 * exp( - rho[i] * outer(t,t,'-')^2 )
+    
+    # Use fancy equation to get predictions
+    ext_mean = Mu_ext + t(Sigma_ext)%*%solve(Sigma, y - Mu)
+    lines(t_ext, ext_mean, col='blue')
+  }
+
+# plot the interpolated best estimate and uncertainty
+lines(t_new, pred_mean, col = 'red', lty = 1)
+lines(t_new, pred_low, col = 'red', lty = 2)
+lines(t_new, pred_high, col = 'red', lty = 2)
+
+# plot the extrapolated best estimate and uncertainty
+lines(t_ext, ext_mean, col='blue')
+lines(t_ext, ext_low, col = 'blue', lty = 2)
+lines(t_ext, ext_high, col = 'blue', lty = 2)
+lines(t_new, pred_samp, col='grey')
 ```
 
-## Including Plots
+## Experiment with the GP
 
-You can also embed plots, for example:
+***
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Now set the number of points ```T``` to be very low - say 4 or 5. Increase sigma to get a less regular and smaooth timeseries.
+
+Put a very low prior on ```sigma``` (the nugget), and put a prior indicating a large value of ```tau```, which controls how fast the GP 'forgets'. What happens to the uncertainty bounds and the mean function?
+
+***
+
+## ADVANCED exercises
+
+You can create a periodic time series with a trend, like this:
+
+```{r, include=TRUE}
+T = 30
+t = 1:T
+y <- rnorm(T,t/5 + sin(seq(from = 0, to = T, length.out=T)), 0.3)
+plot(t,y)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Use our standard JAGS model to fit a GP
+
+```{r, include=TRUE}
+# Jags code to fit the model to the simulated data
+model_code = '
+model
+{
+  # Likelihood
+  y ~ dmnorm(Mu, Sigma.inv)
+  Sigma.inv <- inverse(Sigma)
+  
+  # Set up mean and covariance matrix
+  for(i in 1:T) {
+  Mu[i] <- alpha
+  Sigma[i,i] <- pow(sigma, 2) + pow(tau, 2)
+  
+  for(j in (i+1):T) {
+  Sigma[i,j] <- pow(tau, 2) * exp( - rho * pow(t[i] - t[j], 2) )
+  Sigma[j,i] <- Sigma[i,j]
+  }
+  }
+  
+  alpha ~ dnorm(0, 0.01)
+  sigma ~ dunif(0, 10) # default dunif(0,10)
+  tau ~ dunif(0, 1)
+  rho ~ dunif(0.1, 5)
+  
+} 
+  '
+  
+# Set up the data
+model_data = list(T = T, y = y, t = t)
+  
+# Choose the parameters to watch
+model_parameters =  c("alpha", "sigma", "tau", "rho")
+  
+# Run the model - can be slow
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
+                 model.file=textConnection(model_code),
+                 n.chains=4, # Number of different starting positions
+                 n.iter=1000, # Number of iterations
+                 n.burnin=200, # Number of iterations to remove at start
+                 n.thin=2) # Amount of thinning
+
+# Simulated results -------------------------------------------------------
+
+# Results and output of the simulated example, to include convergence checking, output plots, interpretation etc
+print(model_run)
+
+alpha = model_run$BUGSoutput$sims.list$alpha
+tau = model_run$BUGSoutput$sims.list$tau
+sigma = model_run$BUGSoutput$sims.list$sigma
+rho = model_run$BUGSoutput$sims.list$rho
+par(mfrow = c(2,2))
+hist(alpha, breaks=30)
+hist(tau, breaks=30)
+hist(sigma, breaks=30)
+hist(rho, breaks=30)
+par(mfrow=c(1,1))
+
+```
+
+***
+
+**Exercise A.1**
+What happens when you extrapolate beyond the observation?
+
+***
+```{r, include=TRUE}
+T_new = 30
+t_new = seq(0,T+10,length=T_new) # extrapolate
+Mu = rep(mean(alpha), T)
+Mu_new = rep(mean(alpha), T_new)
+Sigma_new = mean(tau)^2 * exp( -mean(rho) * outer(t, t_new, '-')^2 )
+Sigma_star = mean(sigma)^2 * diag(T_new) + mean(tau)^2 * exp( - mean(rho) * outer(t_new,t_new,'-')^2 )
+Sigma = mean(sigma)^2 * diag(T) + mean(tau)^2 * exp( - mean(rho) * outer(t,t,'-')^2 )
+
+# Use fancy equation to get predictions
+pred_mean = Mu_new + t(Sigma_new)%*%solve(Sigma, y - Mu)
+pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
+
+# Plot output
+plot(t_new,pred_mean, type = 'l', col = 'red')
+points(t,y, col = 'black')
+lines(t_new, pred_mean, col='red')
+
+pred_low = pred_mean - 1.95 * sqrt(diag(pred_var))
+pred_high = pred_mean + 1.95 * sqrt(diag(pred_var))
+lines(t_new, pred_low, col = 'red', lty = 2)
+lines(t_new, pred_high, col = 'red', lty = 2)
+```
+
+***
+
+**Exercise A.2**
+Include a linear term and corresponding parameter to estimate in the JAGS model. How does this change the fit of the GP, and what happens in extrapolation?
+
+Include a periodic term in the covariance function. Does this help in extrapolation?
+
+***
