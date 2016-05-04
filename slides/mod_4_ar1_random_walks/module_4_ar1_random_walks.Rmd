@@ -1,5 +1,5 @@
 ---
-title: "AR(1) models and Random walks"
+title: "Random walks and AR(p) models"
 author: "Doug McNeall, Met Office"
 output:
   ioslides_presentation:
@@ -11,8 +11,52 @@ output:
 ## Learning outcomes
 
 - Understand some of the simpler time series models.
-- Understand AR(1) and random walk processes
+- Understand random walk processes 
+- Understand AR(p) processes
 - Learn how to fit some appropriate models
+
+## Here's a time series
+That's a big trend, right?
+
+```{r random trend, echo=FALSE}
+set.seed(123)
+x <- cumsum(sample(c(-1, 1), size=500, replace=TRUE))
+plot(x, type = 'l')
+```
+well, ...
+
+## Here's how we generate the data
+```{r simulate random walk, echo=TRUE}
+set.seed(123)
+x <- cumsum(sample(c(-1, 1), size=1000, replace=TRUE))
+```
+And what happens when we continue the series...
+```{r, echo=FALSE}
+plot(x, type = 'l')
+```
+
+## Generating a one-dimensional random walk
+
+1. Start at zero
+2. Flip a coin and move (+1) for heads (-1) for tails
+3. Repeat
+
+Where do you end up?
+- Expected mean is 0 as number of steps gets large
+$$ \hat{Y}_{t} = Y_{t-1} $$
+- Variance gets larger with number of steps.
+
+## Random walk applications
+
+- Stockmarket and the efficient market hypothesis
+- Levy flight (distributions of step length)
+- Brownian motion and physics
+
+## How do we know that climate change is not a random walk?
+
+- A statistical model is just that, a convenient model of the process, not the process itself.
+- The importance of process knowledge in setting up tests.
+- For example, a forced temperature change can show long term persistence. Of course!
 
 ## Autoregressive models
 
@@ -21,8 +65,18 @@ output:
 - An AR(p) process can be modelled
 $$Y_{t} = \alpha + \sum_{i=1}^{p} \phi_{i} Y_{t-i} + \epsilon_{t}$$
 
+Where $\alpha$ is a constant, $\phi_{i}$ are the model parameters and $\epsilon_{t}$ is white noise.
+
 For example, an AR(1) process can be written
 $$Y_{t} = \alpha + \phi Y_{t-1} + \epsilon_{t}$$
+
+And an AR(2)
+$$Y_{t} = \alpha + \phi_{1} Y_{t-1} + \phi_2 Y_{t-2} + \epsilon_{t}$$
+
+## Some features of an AR(1) process
+
+- In an AR(1) process, a shock will have an effect for an infinite amount of time!
+- Although in practice, this decays if $\phi<1$.
 
 ## Simulating from an AR(1) process
 
@@ -55,7 +109,6 @@ plot(ar1sim(phi=0.9),type='l', ylim = c(-3,3))
 
 ```
 
-
 ## Simulating from an AR(p) process
 
 ```{r simulate ARp, echo=FALSE}
@@ -67,83 +120,6 @@ y2[1:p] = rnorm(p,0,sigma)
 for(t in (p+1):T) y2[t] = rnorm(1,alpha + sum( phi2 * y2[(t-1):(t-p)] ), sigma)
 plot(t_seq,y2,type='l')
 ```
-
-
-## Another type of model
-
-- That's a big trend, right?
-
-```{r random trend, echo=FALSE}
-set.seed(123)
-x <- cumsum(sample(c(-1, 1), size=500, replace=TRUE))
-plot(x, type = 'l')
-```
-
-## A one-dimensional random walk
-
-1. Start at zero
-2. Flip a coin and move (+1) for heads (-1) for tails
-3. Repeat
-
-Where do you end up?
-- Expected mean is 0 as number of steps gets large
-$$ \hat{Y}_{t} = Y_{t-1} $$
-- Variance gets larger with number of steps.
-
-
-## Simulating a random walk
-
-```{r simulate random walk, echo=TRUE}
-set.seed(123)
-x <- cumsum(sample(c(-1, 1), size=1000, replace=TRUE))
-plot(x, type = 'l')
-```
-
-## Random walk applications (expand)
-
-- Stockmarket and the efficient market hypothesis
-- Levy flight (distributions of step length)
-- Brownian motion and physics
-
-## How do we know that climate change is not a random walk?
-
-- A statistical model is just that, a convenient model of the process, not the process itself.
-- The importance of process knowledge in setting up tests.
-- For example, a forced temperature change can show long term persistence. Of course!
-
-
-
-## A slide with a formula and a pic
-
-*An essay towards solving a problem on the doctrine of chances* (1763)
-
-$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
-
-<center><img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Thomas_Bayes.gif" width=40%/></center>
-
-
-## Simple example in JAGS {.smaller}
-
-In later modules we will start using JAGS to fit models like this. The code is much simpler than the previous R version:
-```{r,eval=FALSE}
-library(rjags)
-modelstring ='
-  model {
-    # Likelihood
-    x ~ dnorm(theta,1/pow(0.8,2))
-    # Prior
-    theta ~ dnorm(2.3,1/pow(0.5,2))
-  }
-'
-# Set up data
-data=list(x=3.1)
-# Run jags
-model=jags.model(textConnection(modelstring), data=data)
-output=coda.samples(model=model,variable.names=c("theta"), n.iter=1000)
-# Plot output
-plot(density(output[[1]]))
-```
-Beware that JAGS uses _precision_ (1/variance) rather than standard deviation in `dnorm`
 
 
 

@@ -63,9 +63,10 @@ What do we use time series methods for? Often, we are trying to do at least one 
 2. Understanding: how is it going on, and why?
 3. Prediction: What is going to go on next?
 
-## First, plot the data
-- HadCRUT4 Annual globally averaged surface temperature
-- How do we separate the **structure** and the random **noise**?
+## First, description
+- HadCRUT4 Annual globally averaged surface temperature, from the Met Office Hadley Centre and Climate Research Unit, UEA.
+
+- How do we separate the **structure** (here the long term trend) and the random **noise**?
 ```{r plot hadcrut straight, echo=FALSE}
 hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly))
@@ -74,7 +75,7 @@ with(hadcrut,plot(Year,Anomaly))
 # In that case, what will happen next year? How about in 2100?
 ```
 
-## First, plot the data
+## Plot the data
 - Using a line plot gives a slightly different impression.
 ```{r plot hadcrut l, echo=FALSE}
 hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
@@ -82,8 +83,18 @@ with(hadcrut,plot(Year,Anomaly,type='l'))
 # perhaps plot a smoothed version?
 ```
 
+## What is going on?
+We get a different impression again if we just plot the last 15 years ..  
+(GWPF + hiatus)
 
-## Example 2 - Sea level rise
+
+## And make a prediction
+
+Would we/could we have predicted the hiatus? How about the massive jump in temperature of the last year?
+
+So, what *is* structure? And what is random?
+
+## A simpler example? Sea level rise
 - Church and White
 - There appears relatively less noise in this data compared to the trend
 ```{r load sea level data, echo=FALSE}
@@ -98,14 +109,12 @@ plot(AirPassengers)
 ```
 
 ## Example - GISP2 stable isotope ratios in Greenland ice
-- This data shows **heteroskedacity** and **regime changes**
+- This data shows **heteroskedacity** and **regime changes** and a lot of **structure**
 ```{r load gisp2 data, echo=FALSE}
 gisp2 = read.table('~/GitHub/tsme_course/data/gispd18o_raw.txt', na.strings = '999999')
 colnames(gisp2) = c('Depth','d18o','Age')
 with(gisp2,plot(Age,d18o,type='l'))
 ```
-
-
 
 ## Changes in variability & Heteroskedascticity
 Monthly NH sea ice Anomaly from 1978 to present.
@@ -162,115 +171,20 @@ D18O? Global financial crash? Regime changes
 
 ## Prediction of the system
 
-## Common mistakes
+## The limits of our analysis
 
-
-## Who was Bayes?
-
-*An essay towards solving a problem on the doctrine of chances* (1763)
-
-$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
-
-<center><img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Thomas_Bayes.gif" width=40%/></center>
-
-## What is Bayesian statistics?
-
-- Bayesian statistics is based on an interpretation of Bayes' theorem
-- All quantities are divided up into _data_ (i.e. things which have been observed) and _parameters_ (i.e. things which haven't been observed)
-- We use Bayes' interpretation of the theorem to get the _posterior probability distribution_, the probability of the unobserved given the observed
-- Used now in almost all areas of statistical application (finance, medicine, environmetrics, gambling, etc, etc)
-
-## What is Bayes' theorem?
-
-Bayes' theorem can be written in words as:
-
-$$\mbox{posterior is proportional to likelihood times prior}$$
-... or ...
-$$\mbox{posterior} \propto \mbox{likelihood} \times \mbox{prior}$$
-  
-Each of the three terms _posterior_, _likelihood_, and _prior_ are _probability distributions_ (pdfs).
-
-In a Bayesian model, every item of interest is either data (which we will write as $x$) or parameters (which we will write as $\theta$). Often the parameters are divided up into those of interest, and other _nuisance parameters_
-
-## Bayes' theorem in more detail
-
-Bayes' equation is usually written mathematically as:
-$$p(\theta|x) \propto p(x|\theta) \times p(\theta)$$
-or, more fully:
-$$p(\theta|x) = \frac{p(x|\theta) \times p(\theta)}{p(x)}$$
-
-- The _posterior_ is the probability of the parameters given the data
-- The _likelihood_ is the probability of observing the data given the parameters (unknowns)
-- The _prior_ represents external knowledge about the parameters
-
-
-## A simple example
-
-- An ecologist listens for the calls of the southern brown tree frog (_Litoria ewingi_)
-- She wants to know the mean length of the calls
-- We will assume that the standard deviation of the calls is known to be 0.8 seconds
-- She hears a call of length 3.1 seconds
-- A study conducted the previous year estimated the mean to be 2.3 seconds with standard error 0.5 seconds
-
-If we assume that the calls she hears are normally distributed then $x$ follows a normal distribution with mean $\theta$ and standard deviation 0.8s, written $x|\theta \sim N(\theta,0.8^2)$. The prior distribution is $\theta \sim N(2.3,0.5^2)$.
-
-## Simple example (continued) {.smaller}
-
-```{r,echo=FALSE,fig.align='center'}
-theta = seq(0,6,length=100)
-likelihood = dnorm(3.1,mean=theta,sd=0.8)
-prior = dnorm(theta,mean=2.3,sd=0.5)
-par(mar=c(3,3,2,1), mgp=c(2,.7,0), tck=-.01,las=1)
-plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.06),xlab='theta (mean length of call in seconds)')
-lines(theta,prior/sum(prior),col='red')
-posterior = prior*likelihood
-lines(theta,posterior/sum(posterior),col='blue')
-legend('topright',legend=c('Likelihood','Prior','Posterior'),col=c('black','red','blue'),lty=1)
-true_post = posterior/sum(posterior)
+This is the ```lynx``` data set, annual numbers of lynx trappings for Canada 1821 - 1934. Regarded as representative of the population.
+```{r plot lynx, echo=TRUE}
+plot(lynx)
 ```
 
-Note: posterior mean is `r round(sum(theta*true_post),2)` seconds and standard deviation is `r round(sqrt(sum(theta^2*true_post)-sum(theta*true_post)^2),2)` seconds. 
+## The limits of our analysis
 
-## Simple example (continued)
-
-Code used to produce previous plot:
-```{r,eval=FALSE}
-# Create grid for theta
-theta = seq(0,6,length=100)
-# Evalutate prior, likelihood and posterior
-prior = dnorm(theta,mean=2.3,sd=0.5)
-likelihood = dnorm(3.1,mean=theta,sd=0.8)
-posterior = prior*likelihood
-# Produce plot
-plot(theta,likelihood/sum(likelihood),type='l',
-     ylab='Probability',ylim=c(0,0.06))
-lines(theta,prior/sum(prior),col='red')
-lines(theta,posterior/sum(posterior),col='blue')
-legend('topright',legend=c('Likelihood','Prior',
-                           'Posterior'),
-       col=c('black','red','blue'),lty=1)
-```
+- Reilly and Zeringue (2004) use a simple dynamic predator-prey model, trained on the first 80 years of data, to predict the last 34.
+- The simple model outperforms many of the best time series methods.
+<center><img src="~/GitHub/tsme_course/slides/graphics/lynx.png" width=40%/></center>
+- RMS error of 1480, compared to 1600 for SETAR method fit with entire data set.
+http://andrewgelman.com/2012/01/28/the-last-word-on-the-canadian-lynx-series/
 
 
-
-## Why is this better?
-
-The Bayesian approach has numerous advantages:
-
-- It's easier to build complex models and to analyse the parameters you want directly
-- We automatically obtain the best parameter estimates and their uncertainty from the posterior samples
-- It allows us to get away from (terrible) null hypothesis testing and $p$-values
-
-## Some further reading
-
-- The Bayesian bible: Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2013). _Bayesian Data Analysis_, Third Edition. CRC Press.
-- The MCMC bible: Brooks, S., Gelman, A., Jones, G., & Meng, X. (2011). _Handbook of Markov Chain Monte Carlo_. CRC Press.
-- Something simpler: McCarthy, M. A. (2007). _Bayesian Methods for Ecology_. Cambridge University Press.
-
-## Summary
-
-- Bayesian statistical models involve a likelihood and a prior. These both need to be carefully chosen. From these we create a posterior distribution
-- The likelihood represents the information about the data generating process, the prior represents information about the unknown parameters
-- We usually create and analyse samples from the posterior probability distribution of the unknowns (the parameters) given the knowns (the data)
-- From the posterior distribution we can create means, medians, standard deviations, credible intervals, etc
 
