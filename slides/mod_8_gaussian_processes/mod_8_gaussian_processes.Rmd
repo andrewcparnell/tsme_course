@@ -37,6 +37,15 @@ We make the assumption that $y$ is ordered by $x$, we fit a curve to the points 
 
 ## Bayesian time series analysis
 
+But! Bayes' theorem naturally encodes Occam's razor:
+
+__"Among competing hypotheses, the one with the fewest assumptions should be selected."__
+
+The solutions with tighter curves are **more complex** and contain **more assumptions**.
+
+
+## Bayesian time series analysis
+
 <center><img src="~/GitHub/tsme_course/slides/graphics/bayesf3.jpg" width=70%/></center>
 
 
@@ -82,14 +91,13 @@ We make the assumption that $y$ is ordered by $x$, we fit a curve to the points 
 
 ## The covariance function
 
-The GP relies on the covariance kernel function, which has the general form $k(x_1, x_2)$
+The GP relies on the covariance **kernel function**, which has the general form $k(x_{1}, x_{2})$
 
 We might choose something like
 
 $$k(x_{1}, x_{2}) = \tau^2 exp[- \rho(x_{1}-x_{2})^2]$$
 
-So that the covariance reduces as the distance between $x_1$ and $x_2$ increases, depending on parameter $\rho$.
-
+So that the covariance reduces as the distance between $x_1$ and $x_2$ increases, depending on length parameter $\rho$.
 
 ## The maths
 
@@ -98,13 +106,28 @@ $y$ is the vector of observations of $y_t$, a response variable at time $t$. We 
 $$ y \sim MVN(\mu, \Sigma)$$
 $\mu$ is some mean function and $\Sigma$ is a covariance matrix where 
 $$\Sigma_{ij} = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
-if $i \neq j$  and 
+if $i \neq j$
+
+
+## The nugget term
+
+- The diagonal $(i=j)$ of the covariance matrix contains the information about the uncertainty relationship between a point and itself!
+
+ - If there is NO uncertainty at a point, the mean function is constrained to go through the point (this is useful for deterministic computer models).
+ 
+- We can add a **nugget**, so that the mean function isn't constrained.
+
+if $i \neq j$
 $$\Sigma_{ij} = \tau^2 +\sigma^2$$
 if $i=j$ (i.e. on the diagonal).
 
+## The nugget term
 
+<img src="~/GitHub/tsme_course/slides/graphics/nugget2.jpg" width=45%/>
+<img src="~/GitHub/tsme_course/slides/graphics/nugget3.jpg" width=45%/>
 
-##
+## The covariance matrix
+
 
 ## Choices of covariance function
 
@@ -131,6 +154,22 @@ http://mucm.aston.ac.uk/MUCM/MUCMToolkit/index.php?page=AltCorrelationFunction.h
 ## Sampling from the posterior distribution
 
 ## Fitting GPs in JAGS
+
+
+## Resources
+
+- This excellent primer on GPs for time series inspired many of the diagrams in this lecture.
+http://www.robots.ox.ac.uk/~sjrob/Pubs/philTransA_2012.pdf
+
+- A useful GP primer from the same group.
+http://www.robots.ox.ac.uk/~mebden/reports/GPtutorial.pdf
+
+- The MUCM (Managing Uncertainty in Complex Models) toolkit is a useful practical reference.
+http://mucm.aston.ac.uk/MUCM/MUCMToolkit/index.php?page=MetaHomePage.html
+
+- Rasmussen and Williams (2006) is a great GP book
+http://www.gaussianprocess.org/gpml/chapters/
+
 
 
 
