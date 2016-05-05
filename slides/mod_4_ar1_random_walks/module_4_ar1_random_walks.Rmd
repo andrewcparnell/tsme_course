@@ -28,11 +28,11 @@ well, ...
 ## Here's how we generate the data
 ```{r simulate random walk, echo=TRUE}
 set.seed(123)
-x <- cumsum(sample(c(-1, 1), size=1000, replace=TRUE))
+y <- cumsum(sample(c(-1, 1), size=1000, replace=TRUE))
 ```
 And what happens when we continue the series...
 ```{r, echo=FALSE}
-plot(x, type = 'l')
+plot(y, type = 'l')
 ```
 
 ## Generating a one-dimensional random walk
@@ -44,21 +44,52 @@ plot(x, type = 'l')
 Where do you end up?
 - Expected mean is 0 as number of steps gets large
 $$ \hat{Y}_{t} = Y_{t-1} $$
-- Variance gets larger with number of steps.
+
+- The variance gets larger with number of steps
+- But in an infinite series, every point (including zero) is crossed an infinite number of times. This causes the **gambler's ruin**.
+
+## A random walk in two dimensions
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/301px-Random_walk_2500.svg.png" width=40%/></center>
+
+## A random walk in two dimensions
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/672px-Random_walk_25000_not_animated.svg.png" width=50%/></center>
+
+## A random walk in two dimensions
+<center><img src="~/GitHub/tsme_course/slides/graphics/692px-Random_walk_2000000.png" width=55%/></center>
+As the step size decreases, this process approaches **Brownian motion**
 
 ## Random walk applications
 
-- Stockmarket and the efficient market hypothesis
-- Levy flight (distributions of step length)
-- Brownian motion and physics
+The steps don't have to be the same size.
 
-## How do we know that climate change is not a random walk?
+- A step size with a Gaussian distribution is useful for modelling stock markets. 
+- If the step size probability distribution is heavy tailed, you have **Levy flight**.
 
+## Levy flight vs Brownian motion
+
+<left><img src="~/GitHub/tsme_course/slides/graphics/364px-LevyFlight.svg.png" width=36%/></left>
+<right><img src="~/GitHub/tsme_course/slides/graphics/256px-BrownianMotion.svg.png" width=35%/></right>
+
+There is evidence that animals such as sharks follow a levy flight pattern (left) when foraging for food - they had previously been thought to approximate Brownian motion (right)
+
+
+## Random walks in climate
+
+Annoyed with skeptics claiming solar cycles drive climate change, [Turner (2016)](http://www.nature.com/articles/srep23961) put random walks through a spectral filter, and got solar cycles.
+
+<center><img src="~/GitHub/tsme_course/slides/graphics/Turner2016_RW.jpg" width=55%/></center>
+
+## But, how do we know that climate change is not a random walk?
+
+- A forced temperature change can show long term persistence. Of course!
 - A statistical model is just that, a convenient model of the process, not the process itself.
-- The importance of process knowledge in setting up tests.
-- For example, a forced temperature change can show long term persistence. Of course!
+- We need to integrate our knowledge of the system from elsewhere. We have physics!
 
-## Autoregressive models
+# Autoregressive models
+
+## Autoregressive (AR) models
 
 - Output depends **linearly** on its previous values **and** a stochastic term. 
 
@@ -72,11 +103,6 @@ $$Y_{t} = \alpha + \phi Y_{t-1} + \epsilon_{t}$$
 
 And an AR(2)
 $$Y_{t} = \alpha + \phi_{1} Y_{t-1} + \phi_2 Y_{t-2} + \epsilon_{t}$$
-
-## Some features of an AR(1) process
-
-- In an AR(1) process, a shock will have an effect for an infinite amount of time!
-- Although in practice, this decays if $\phi<1$.
 
 ## Simulating from an AR(1) process
 
@@ -95,7 +121,7 @@ for(t in 2:T) y[t] = rnorm(1,alpha + phi * y[t-1], sigma)
 
 ## Increasing $\phi$ parameter
 ```{r plot phi, echo=FALSE}
-ar1sim <- function(T=200, sigma=0.5, alpha=0, phi=0.6){
+ar1sim <- function(T=500, sigma=0.5, alpha=0, phi=0.6){
   set.seed(123)
   y = rep(NA,T)
   y[1] = rnorm(1,0,sigma)
@@ -109,17 +135,60 @@ plot(ar1sim(phi=0.9),type='l', ylim = c(-3,3))
 
 ```
 
+## Some features of an AR(1) process
+
+- In an AR(1) process, a shock will have an effect for an infinite amount of time!
+- In practice, this decays exponentially if $\phi<1$.
+- We can see this if we look at the **autocorrelation function**
+
+## The autocorrelation function
+```{r, echo=TRUE}
+acf(ar1sim(T = 500, phi = 0.9))
+```
+
+
+## Negative autocorrelation
+```{r, echo=TRUE}
+y <- ar1sim(T = 500, phi = -0.9)
+plot(y, type = 'l')
+```
+
+## The acf for negative autocorrelation
+```{r, echo=TRUE}
+acf(y)
+```
+
+## The partial autocorrelation function
+The **partial** autocorrelation function controls for the autocorrlation at all other lags
+```{r, echo=TRUE}
+pacf(ar1sim(T = 1000, phi = 0.9))
+```
+
 ## Simulating from an AR(p) process
 
-```{r simulate ARp, echo=FALSE}
+```{r simulate ARp, echo=TRUE}
 # Also simulate an AR(p) process
+T = 500
+t_seq = 1:T
+sigma = 1
+alpha = 1
 p = 3
-phi2 = c(0.5,0.1,-0.02)
+phi2 = c(0.3,0.3,-0.3)
 y2 = rep(NA,T)
 y2[1:p] = rnorm(p,0,sigma)
 for(t in (p+1):T) y2[t] = rnorm(1,alpha + sum( phi2 * y2[(t-1):(t-p)] ), sigma)
 plot(t_seq,y2,type='l')
 ```
+
+## PACF for an AR3 process
+```{r, echo=FALSE}
+pacf(y2)
+```
+
+# Fitting AR models in JAGS
+
+
+
 
 
 
