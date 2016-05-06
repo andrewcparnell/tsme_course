@@ -26,7 +26,7 @@ print("Hello World")
 ```
 ***
 
-If you get stuck, please get our attention and we will try to help! There are no prepared answers to these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
+If you get stuck, please get our attention and we will try to help! There aren't prepared answers to all of these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.  
 
 You can run the code from these practicals by loading up the `.Rmd` file in the same directory in Rstudio. This is an R markdown document containing all the text. Feel free to add in your own answers, or edit the text to give yourself extra notes. You can also run the code directly by highlighting the relevant code and clicking `Run`.
 
