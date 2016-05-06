@@ -164,7 +164,7 @@ The **partial** autocorrelation function controls for the autocorrlation at all 
 pacf(ar1sim(T = 1000, phi = 0.9))
 ```
 
-## Simulating from an AR(p) process
+## Simulating from an AR(p) process {.smaller}
 
 ```{r simulate ARp, echo=TRUE}
 # Also simulate an AR(p) process
@@ -185,10 +185,263 @@ plot(t_seq,y2,type='l')
 pacf(y2)
 ```
 
+# Fitting Random Walk models in JAGS
+
+## The temperature in Greenland in the last 100kyr
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+library(R2jags)
+ice = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/GISP2_20yr.csv')
+
+par(mfrow = c(2,1), mar = c(0,4,0,0))
+with(ice,plot(Age,Del.18O,type='l'))
+# Try plots of differences
+with(ice,plot(Age[-1],diff(Del.18O,differences=1),type='l'))
+```
+
+## Examining the data
+
+```{r, echo=TRUE}
+# Have to be careful here with differences, look:
+table(diff(ice$Age))
+# The random walk model we use requires evenly spaced time differences
+# Just use the Holocene as most of this is 20-year
+ice2 = subset(ice,Age<=10000)
+table(diff(ice2$Age))
+```
+
+## Just keep the Holocene
+```{r, echo=FALSE}
+with(ice2, plot(diff(Del.18O), type = 'l'))
+```
+
+## Setting up the model
+
+```{r, echo=TRUE}
+# Jags code to fit the model to the simulated data
+# Note: running the differencing offline here as part of the data step
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 1:N_T) {
+    z[t] ~ dnorm(mu, tau)
+  }
+
+  # Priors
+  mu ~ dnorm(0.0,0.01)
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,100.0)
+}
+'
+```
+
+## Run the model
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Choose the parameters to watch
+model_parameters =  c("mu","sigma")
+
+# Set up the data
+order = 1
+T = 100
+real_data = with(ice2,
+                 list(z = diff(Del.18O, differences=order), N_T = T-order))
+
+# Run the model
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+```
+
+
+## Check the model{.smaller}
+```{r, echo = TRUE}
+print(real_data_run)
+```
+
+## Make some predictions
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE, fig.align='center'}
+# Create some predictions off into the future
+T_future = -200 # Remember we're in years before 1950 here so -50 = 2000, also on 20 year grid
+future_grid = seq(min(ice2$Age), T_future, by=-20)
+future_values = matrix(NA, ncol=length(future_grid), nrow=1000) # Create 1000 future simulations
+for(i in 1:1000) {
+  future_values[i,1] = ice2$Del.18O[1] + rnorm(1,
+                                               mean = real_data_run$BUGSoutput$sims.list$mu[i],
+                                               sd = real_data_run$BUGSoutput$sims.list$sigma[i])
+  for(j in 2:length(future_grid)) {
+    future_values[i,j] = future_values[i,j-1] + rnorm(1,
+                                                 mean = real_data_run$BUGSoutput$sims.list$mu[i],
+                                                 sd = real_data_run$BUGSoutput$sims.list$sigma[i])
+  }
+}
+
+# Summarise them
+future_low = apply(future_values,2,'quantile',0.25)
+future_high = apply(future_values,2,'quantile',0.75)
+future_med = apply(future_values,2,'quantile',0.5)
+```
+
+```{r,echo=FALSE, fig.align='center'}
+# Summarise Plot these all together
+with(ice2,
+     plot(Age,
+          Del.18O,
+          type = 'l',
+          xlim = range(c(Age,future_grid)),
+          ylim = range(c(Del.18O,future_values))))
+lines(future_grid,future_low,lty='dotted',col='red')
+lines(future_grid,future_high,lty='dotted',col='red')
+lines(future_grid,future_med,col='red')
+```
+
+## Zoom in on the predcition
+```{r,echo=FALSE, fig.align='center'}
+with(ice2,
+     plot(Age,
+          Del.18O,
+          type = 'l',
+          xlim = c(-200, 1000),
+          ylim = c(-36,-33)))
+lines(future_grid,future_low,lty='dotted',col='red')
+lines(future_grid,future_high,lty='dotted',col='red')
+lines(future_grid,future_med,col='red')
+```
+There is more detail in [jags_random_walks.R](https://github.com/andrewcparnell/tsme_course/blob/master/misc_code/jags_random_walks.R)
+
 # Fitting AR models in JAGS
 
+```{r, echo=FALSE,message=FALSE}
+rm(list=ls()) # Clear the workspace
+library(R2jags)
+```
+
+## The Bayesian AR model {.smaller}
+
+```{r, echo=TRUE}
+# Description of the Bayesian model fitted in this file
+# Notation:
+# y(t) = response variable at time t, t = 1,...,T
+# alpha = overall mean parameter
+# phi = autocorrelation/autoregressive (AR) parameter
+# phi_j = Some of the models below have multiple AR parameters, j = 1,..P
+# sigma = residual standard deviation
+
+# Likelihood
+# For AR(1)
+# y[t] ~ normal(alpha + phi * y[t-1], sigma^2)
+# For AR(p)
+# y[t] ~ normal(alpha + phi[1] * y[t-1] + ... + phi[p] * y[y-p], sigma^2)
+
+# Priors
+# alpha ~ dnorm(0,100)
+# phi ~ dunif(-1,1) # If you want the process to be stable/stationary
+# phi ~ dnorm(0,100) # If you're not fussed about stability
+# sigma ~ dunif(0,100)
+```
+
+## The JAGS general AR(p) model {.smaller}
+```{r, echo=TRUE}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in (p+1):T) {
+    y[t] ~ dnorm(mu[t], tau)
+    mu[t] <- alpha + inprod(phi, y[(t-p):(t-1)])
+  }
+
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+```{r, echo=TRUE}
+# Choose the parameters to watch
+model_parameters =  c("alpha","phi","sigma")
+```
+
+## Let's fit the HadCRUT4 data
+
+```{r, echo=FALSE, fig.align='center'}
+# Data wrangling and jags code to run the model on a real data set in the data directory
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+with(hadcrut,plot(Year,Anomaly,type='l'))
+```
+
+## Run the model {.smaller}
+
+```{r, echo=TRUE, message = FALSE}
+# Set up the data
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut),
+                      y = hadcrut$Anomaly,
+                      p = 1))
+
+# Run the model
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+```
 
 
+## Check the model fit
+
+```{r, echo=TRUE}
+# Plot output
+print(real_data_run) # Very high degree of autocorrelation
+```
+
+## Create one-step-ahead predictions
+
+```{r, echo=FALSE}
+# Plot some of the fitted values (also known as one-step-ahead predictions)
+post = print(real_data_run)
+alpha_mean = post$mean$alpha
+phi_mean = post$mean$phi
+# Create fitted values
+fitted_values = alpha_mean + phi_mean * real_data$y[1:(nrow(hadcrut)-1)]
+```
+
+## Create one-step-ahead predictions
+```{r, echo=FALSE,fig.align='center'}
+# Create fitted line
+with(hadcrut, plot(Year, Anomaly, type='l'))
+with(hadcrut, lines(Year[2:nrow(hadcrut)], fitted_values, col='red'))
+```
 
 
+## Create some predictions off into the future
+See, no global warming!
+```{r, echo=FALSE}
+T_future = 2050
+future_values = rep(NA, T_future-max(hadcrut$Year))
+future_values[1] = alpha_mean + phi_mean * real_data$y[nrow(hadcrut)]
+for (i in 2:length(future_values)) {
+  future_values[i] = alpha_mean + phi_mean * future_values[i-1]
+}
+
+# Plot these all together
+with(hadcrut,
+     plot(Year,
+          Anomaly,
+          type='l',
+          xlim=c(min(hadcrut$Year),T_future),
+          ylim=range(c(hadcrut$Anomaly,future_values))))
+lines(((max(hadcrut$Year)+1):T_future),future_values,col='red')
+```
 

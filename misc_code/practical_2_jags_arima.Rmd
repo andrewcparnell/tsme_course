@@ -1,5 +1,5 @@
 ---
-title: "practical_2_jags_arima"
+title: "Practical 2 - fitting ARIMA models in JAGS"
 author: "Doug McNeall"
 date: "28 April 2016"
 output: html_document
@@ -7,14 +7,13 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
 knitr::opts_chunk$set(echo = TRUE)
 library(R2jags)
 ```
 
 ## Introduction
 
-Welcome to Practical 2, on using JAGS to fit ARIMA type models. In this practical we'll
+Welcome to Practical 2, on using JAGS to fit ARIMA type models. In this practical we'll:
 
 - Simulate some ARIMA and ARIMAX timeseries, and fit an approriate model using JAGS
 - Fit ARIMA and ARIMAX models to some real data, and make some predictions
@@ -23,7 +22,7 @@ Welcome to Practical 2, on using JAGS to fit ARIMA type models. In this practica
 You should follow and run the commands shown in the grey boxes below. At various points you will see a horizontal line in the text which indicates a question you should try to answer, like this:
 
 ***
-
+**Exercise X**
 What words does the following command print to the console?
 ```{r,results='hide'}
 print("Hello World")
@@ -31,7 +30,7 @@ print("Hello World")
 
 ***
 
-If you get stuck, please get our attention and we will try to help! There are no prepared answers to these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
+If you get stuck, please get our attention and we will try to help! There aren't prepared answers to all of these questions so keep you own record as you go. At the end of the practical are harder questions which you can attempt if you get through all of the material. If you find any mistakes in the document please let us know.
 
 You can run the code from these practicals by loading up the `.Rmd` file in the same directory in Rstudio. This is an R markdown document containing all the text. Feel free to add in your own answers, or edit the text to give yourself extra notes. You can also run the code directly by highlighting the relevant code and clicking `Run`.
 
@@ -39,7 +38,6 @@ You can run the code from these practicals by loading up the `.Rmd` file in the 
 
 In the first section, we will simulate some data from an ARIMA process.
 First we have some notation, and then some example R code to run.
-
 
 ### Notation for the ARIMA model
 
@@ -89,8 +87,6 @@ for(t in (q+1):T) {
 plot(1:T,y,type='l')
 ```
 
-
-
 # Simulate from an ARIMAX model
 
 ```{r, setup arimax}
@@ -120,34 +116,229 @@ for(t in (q+1):T) {
 plot(1:T,y,type='l')
 ```
 
-- Plot the results
-- Change the parameters of the model, and record what happens to the timeseries 
+***
+Excercise X
+Experiment with the parameters of the ARIMA and ARIMAX models to get a feel of how they affect the time series.
+
+***
 
 
-## Prediction using ARIMA and ARIMAX
+# Fitting ARIMA and ARIMAX models to real data
 
-- Fit an ARIMA model to the HADCRUT data
-- predict the next 20 years of the temperature record
-- Use the forcing data to fit an ARIMAX, and compare with the ARIMA prediction
+In this section we will:
 
+1. Fit an ARIMA model to the HadCRUT4 data.
+2. Predict the next 20 years of the temperature record.
+3. Use some extra data to fit an ARIMAX, and compare with the ARIMA prediction.
 
+## Load the HadCRUT4 data 
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, echo=TRUE}
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+with(hadcrut,plot(Year,Anomaly,type='l'))
 ```
 
-## Including Plots
+Set up the JAGS model, to fit the real data.
 
-You can also embed plots, for example:
+```{r, echo=TRUE}
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- y[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    reg_mean[t] <- inprod(beta, x[t,])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
+  }
+  
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:k) {
+    beta[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Set up the data and model parameters, and run JAGS to estimate the ARIMA parameters.
+
+```{r, echo=TRUE}
+# Choose the parameters to watch
+model_parameters =  c("alpha","theta","phi","beta","sigma")
+
+# Set up the data
+real_data = with(hadcrut,
+                 list(T = nrow(hadcrut),
+                      y = Anomaly,
+                      x = matrix(Year,ncol=1),
+                      q = 1,
+                      p = 1,
+                      k = 1))
+
+# This needs a longer run to get decent convergence
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
+
+# Plot output
+print(real_data_run) # beta small and convergence not as good
+```
+
+***
+Print the model output. How does the convergence compare to the simulated example?  
+***
+
+## Predicting future value of the timeseries
+
+We'll use the "NA trick" to estimate the time series in the future. We set up a data list with values of $NA$ appended to the output $y$. JAGS estimates the missing parameters, plus their uncertainty.
+
+```{r, echo=TRUE}
+
+T_future = 20 # Number of future data points
+year_future = (max(hadcrut$Year)+1):(max(hadcrut$Year)+T_future)
+
+real_data_future = with(hadcrut,
+                        list(T = nrow(hadcrut) + T_future,
+                             y = c(Anomaly, rep(NA,T_future)),
+                             x = matrix(c(Year,year_future),ncol=1),
+                             q = 1,
+                             p = 1,
+                             k = 1))
+```
+
+Just watch the output $y$ now.
+
+```{r, echo=TRUE}
+model_parameters =  c("y")
+
+# Run the model
+real_data_run_future = jags(data = real_data_future,
+                            parameters.to.save = model_parameters,
+                            model.file=textConnection(model_code),
+                            n.chains=4,
+                            n.iter=10000,
+                            n.burnin=2000,
+                            n.thin=8)
+```
+
+***
+**Exercise X**
+Print out the ```real_data_run_future``` object and see how JAGS has estimated $y$.  
+***
+
+Now we'll extract the best estimate of the future values, as well as the uncertainty.
+
+```{r, echo=TRUE}
+# Get the future values
+y_all = real_data_run_future$BUGSoutput$sims.list$y
+# If you look at the above object you'll see that the first columns are all identical because they're the historical data
+y_all_mean = apply(y_all,2,'mean')
+# Also create the upper/lower 95% CI values
+y_all_low = apply(y_all,2,'quantile',0.025) 
+y_all_high = apply(y_all,2,'quantile',0.975) 
+year_all = c(hadcrut$Year,year_future)
+
+# Plot these all together
+plot(year_all,
+     y_all_mean,
+     type='n',
+     ylim=range(c(hadcrut$Anomaly,y_all_low,y_all_high)))
+lines(year_all,y_all_mean,col='red')
+lines(year_all,y_all_low,col='red',lty='dotted')
+lines(year_all,y_all_high,col='red',lty='dotted')
+with(hadcrut,lines(Year,Anomaly))
+```
+
+***
+**Exercise X**
+  
+***
+
+## Including exogenous variables - ARIMAX
+
+A Representative Concentration Pathway (RCP) is a greenhouse gas concentration trajectory, used to drive climate models in simulations of the future. The climate modelling community adopted four for the fifth assesssment report of the IPCC, in 2013.
+
+The four pathways represent a wide range of possible futures - from fossil fuel intensive (RCP8.5), to a future that uses bioenergy and carbon capture to reduce emissions quickly (RCP2.6). The numbers refer to the *radiative forcing* values at 2100, compared to pre-industrial. A radiative forcing of $8.5 Wm^{-2}$, will tend to warm the Earth faster than $2.6 Wm^{-2}$!
+
+To find the radiative forcing due to a particular greenhouse gas concentration, you have to run a climate model with the trajectory, and diagnose the forcing. That has been done by many major climate modelling groups.
+
+We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmalte/rcps/) as an exogenous variable in an ARIMAX model
+
+## Load the  forcing data
+```{r, echo=TRUE}
+# replace '85' with '3PD' '45' or '6' to look at the other rcps
+rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
+rcp <- read.table(file = rcpurl, skip = 59, header=TRUE)
+
+# Use the forcing data for both training and prediction
+#index in to create a training and prediction set.
+start_ix = which(rcp[,1]==1850)
+end_ix = which(rcp[,1]==2035)
+forcing_train = rcp[start_ix:end_ix,2]
+
+```
+
+```{r, echo=TRUE}
+real_data_future_forced = with(hadcrut,
+                              list(T = nrow(hadcrut) + T_future,
+                              y = c(Anomaly, rep(NA,T_future)),
+                              x = matrix(cbind(c(Year,year_future), forcing_train),ncol=2),
+                              q = 1,
+                              p = 1,
+                              k = 2))
+
+```
+
+```{r, echo=TRUE}
+# Run the model
+real_data_run_future_forced = jags(data = real_data_future_forced,
+                            parameters.to.save = model_parameters,
+                            model.file=textConnection(model_code),
+                            n.chains=4,
+                            n.iter=10000,
+                            n.burnin=2000,
+                            n.thin=8)
+
+
+```
+
+```{r, echo=TRUE}
+# Get the future values
+y_all = real_data_run_future_forced$BUGSoutput$sims.list$y
+# If you look at the above object you'll see that the first columns are all identical because they're the data
+y_all_mean = apply(y_all,2,'mean')
+# Also create the upper/lower 95% CI values
+y_all_low = apply(y_all,2,'quantile',0.025) 
+y_all_high = apply(y_all,2,'quantile',0.975) 
+year_all = c(hadcrut$Year,year_future)
+
+# Plot these all together
+plot(year_all,
+     y_all_mean,
+     type='n',
+     ylim=range(c(hadcrut$Anomaly,y_all_low,y_all_high)))
+lines(year_all,y_all_mean,col='red')
+lines(year_all,y_all_low,col='red',lty='dotted')
+lines(year_all,y_all_high,col='red',lty='dotted')
+with(hadcrut,lines(Year,Anomaly))
+```
+
