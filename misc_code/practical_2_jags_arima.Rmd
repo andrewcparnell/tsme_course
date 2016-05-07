@@ -1,7 +1,7 @@
 ---
 title: "Practical 2 - fitting ARIMA models in JAGS"
-author: "Doug McNeall"
-date: "28 April 2016"
+author: "Doug McNeall & Andrew Parnell"
+date: "11th May 2016"
 output: html_document
 ---
 
@@ -34,9 +34,10 @@ If you get stuck, please get our attention and we will try to help! There aren't
 
 You can run the code from these practicals by loading up the `.Rmd` file in the same directory in Rstudio. This is an R markdown document containing all the text. Feel free to add in your own answers, or edit the text to give yourself extra notes. You can also run the code directly by highlighting the relevant code and clicking `Run`.
 
-## Simulate some data from an ARIMA process
+# The ARIMA model
 
-In the first section, we will simulate some data from an ARIMA process.
+In the first section, we will simulate some data from an ARIMA process, and fit a JAGS model to the simulated data.  
+
 First we have some notation, and then some example R code to run.
 
 ### Notation for the ARIMA model
@@ -63,6 +64,9 @@ First we have some notation, and then some example R code to run.
 ```
 
 ### R to simulate from the ARIMA model
+
+We can simulate from an ARIMA model by choosing some parameters, and sequentially applying the function along a vector.
+
 ```{r, setup arima}
 # Some R code to simulate data from the above model
 p = 1 # Number of autoregressive terms
@@ -87,7 +91,107 @@ for(t in (q+1):T) {
 plot(1:T,y,type='l')
 ```
 
-# Simulate from an ARIMAX model
+***
+**Exercise 1**
+
+1. Try changing the parameters of the ARIMA model and plotting the resulting time series. How does the time series change?
+
+***
+
+## Jags code to fit the ARIMA model
+This piece of JAGS code builds the model to fit the ARIMA data.
+
+```{r, echo=TRUE}
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- y[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t]
+  }
+
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+## Running JAGS for the ARIMA model
+We'll set up the data and model parameters, and run the model.
+
+```{r, echo=TRUE, message=FALSE}
+# Set up the data
+model_data = list(T = T, y = y, q = 1, p = 1)
+
+# Choose the parameters to watch
+model_parameters =  c("alpha","theta","phi","sigma")
+
+# Run the model
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
+                 model.file=textConnection(model_code),
+                 n.chains=4, # Number of different starting positions
+                 n.iter=1000, # Number of iterations
+                 n.burnin=200, # Number of iterations to remove at start
+                 n.thin=2) # Amount of thinning
+
+```
+
+***
+**Exercise 2**
+
+1. Examine the model output, and check that the estimates for the parameters are sensible. Try plotting the output, and check for convergence.
+
+***
+
+# The ARIMAX model
+
+We'll have a look at an ARIMA with explanatory (or exogenous) variables - the ARIMAX model.
+
+### Notation for the ARIMA model
+
+```{r, echo=TRUE}
+# Notation:
+# y(t) = response variable at time t, t=1,...,T (possible differenced)
+# alpha = mean parameter
+# eps_t = residual at time t
+# theta = MA parameters
+# phi = AR parameters
+# sigma = residual standard deviation
+# d = number of first differences
+# p and q = number of autoregressive and moving average components respecrively
+# k = number of explanatory variables
+# beta = regression parameters
+# x = explanatory variables, a T by k matrix
+
+# Likelihood:
+# y[t] ~ N(alpha + phi[1] * y[t-1] + ... + phi[p] * y[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q} + beta[1]*x[t,1] + ... beta[k]*x[t,k], sigma^2)
+# Priors - all vague here
+# alpha ~ N(0,100)
+# phi ~ N(0,100)
+# theta ~ N(0,100)
+# sigma ~ unif(0,10)
+# beta ~ N(0,100)
+```
+
+## Simulating from an ARIMAX model
+
+This piece of code simulates from the ARIMAX model.
 
 ```{r, setup arimax}
 p = 1 # Number of autoregressive terms
@@ -117,28 +221,95 @@ plot(1:T,y,type='l')
 ```
 
 ***
-Excercise X
-Experiment with the parameters of the ARIMA and ARIMAX models to get a feel of how they affect the time series.
+**Excercise 3**
+
+1. Try changing the parameters of the ARIMAX model and plotting the resulting time series. How does the time series change?
 
 ***
 
+## Jags code to fit the ARIMAX model
+This piece of JAGS code builds the model to fit the ARIMAX data.
+```{r, echo=TRUE}
+model_code = '
+model
+{
+  # Set up residuals
+  for(t in 1:q) {
+    eps[t] <- y[t] - alpha
+  }
+  # Likelihood
+  for (t in (q+1):T) {
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
+    ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    reg_mean[t] <- inprod(beta, x[t,])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
+  }
+  
+  # Priors
+  alpha ~ dnorm(0.0,0.01)
+  for (i in 1:q) {
+    theta[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:p) {
+    phi[i] ~ dnorm(0.0,0.01)
+  }
+  for(i in 1:k) {
+    beta[i] ~ dnorm(0.0,0.01)
+  }
+  tau <- 1/pow(sigma,2) # Turn precision into standard deviation
+  sigma ~ dunif(0.0,10.0)
+}
+'
+```
+
+
+## Running JAGS for the ARIMAX model
+We'll set up the data and model parameters, and run the model. Note the inclusion of explanatory variables in ```x```.
+
+```{r, echo=TRUE, message=FALSE}
+# Set up the data
+model_data = list(T = T, y = y, x=x, q = 1, p = 1, k=2)
+
+# Choose the parameters to watch
+model_parameters =  c("alpha","theta","phi","beta","sigma")
+
+# Run the model
+model_run = jags(data = model_data,
+                 parameters.to.save = model_parameters,
+                 model.file=textConnection(model_code),
+                 n.chains=4, # Number of different starting positions
+                 n.iter=1000, # Number of iterations
+                 n.burnin=200, # Number of iterations to remove at start
+                 n.thin=2) # Amount of thinning
+
+```
+
+***
+**Exercise 4**
+
+1. Examine the ARIMAX model output, and check that the estimates for the parameters are sensible. Try plotting the output, and check for convergence.
+
+***
 
 # Fitting ARIMA and ARIMAX models to real data
 
 In this section we will:
 
-1. Fit an ARIMA model to the HadCRUT4 data.
-2. Predict the next 20 years of the temperature record.
+1. Fit an ARIMA model to the HadCRUT4 global temperature record.
+2. Predict the next 20 years of temperature.
 3. Use some extra data to fit an ARIMAX, and compare with the ARIMA prediction.
 
 ## Load the HadCRUT4 data 
+
+First, load the data and remind yourself what it looks like.
 
 ```{r, echo=TRUE}
 hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly,type='l'))
 ```
 
-Set up the JAGS model, to fit the real data.
+Set up the JAGS model, to fit the real data. Here we'll use the ARIMAX code, but just with a linear dependence on time.
 
 ```{r, echo=TRUE}
 model_code = '
@@ -175,9 +346,9 @@ model
 
 ```
 
-Set up the data and model parameters, and run JAGS to estimate the ARIMA parameters.
+Set up the data and model parameters, and run JAGS to estimate the parameters.
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
 # Choose the parameters to watch
 model_parameters =  c("alpha","theta","phi","beta","sigma")
 
@@ -198,18 +369,18 @@ real_data_run = jags(data = real_data,
                      n.iter=10000,
                      n.burnin=2000,
                      n.thin=8)
-
-# Plot output
-print(real_data_run) # beta small and convergence not as good
 ```
 
 ***
-Print the model output. How does the convergence compare to the simulated example?  
+**Exercise 5**
+
+1. Examine the model output, check for convergence and parameter estimation. How does the convergence compare to the simulated example?  
+
 ***
 
-## Predicting future value of the timeseries
+## Predicting future value of the global mean temperature
 
-We'll use the "NA trick" to estimate the time series in the future. We set up a data list with values of $NA$ appended to the output $y$. JAGS estimates the missing parameters, plus their uncertainty.
+We'll use the "NA trick" to estimate the time series in the future. We set up a data list with values of ```NA``` appended to the output $y$. JAGS estimates the missing parameters, plus their uncertainty.
 
 ```{r, echo=TRUE}
 
@@ -225,7 +396,7 @@ real_data_future = with(hadcrut,
                              k = 1))
 ```
 
-Just watch the output $y$ now.
+Just watch the output ```y``` now - JAGS will estimate it.
 
 ```{r, echo=TRUE}
 model_parameters =  c("y")
@@ -241,8 +412,10 @@ real_data_run_future = jags(data = real_data_future,
 ```
 
 ***
-**Exercise X**
-Print out the ```real_data_run_future``` object and see how JAGS has estimated $y$.  
+**Exercise 6**
+
+1. Print out the ```real_data_run_future``` object and see how JAGS has estimated ```y```. 
+
 ***
 
 Now we'll extract the best estimate of the future values, as well as the uncertainty.
@@ -269,11 +442,13 @@ with(hadcrut,lines(Year,Anomaly))
 ```
 
 ***
-**Exercise X**
-  
+**Exercise 7**
+
+1. How does the prediction look?  
+
 ***
 
-## Including exogenous variables - ARIMAX
+## Including explanatory (exogenous) variables - ARIMAX
 
 A Representative Concentration Pathway (RCP) is a greenhouse gas concentration trajectory, used to drive climate models in simulations of the future. The climate modelling community adopted four for the fifth assesssment report of the IPCC, in 2013.
 
@@ -281,7 +456,7 @@ The four pathways represent a wide range of possible futures - from fossil fuel 
 
 To find the radiative forcing due to a particular greenhouse gas concentration, you have to run a climate model with the trajectory, and diagnose the forcing. That has been done by many major climate modelling groups.
 
-We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmalte/rcps/) as an exogenous variable in an ARIMAX model
+We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmalte/rcps/) as an explanatory variable in an ARIMAX model.
 
 ## Load the  forcing data
 ```{r, echo=TRUE}
@@ -294,8 +469,9 @@ rcp <- read.table(file = rcpurl, skip = 59, header=TRUE)
 start_ix = which(rcp[,1]==1850)
 end_ix = which(rcp[,1]==2035)
 forcing_train = rcp[start_ix:end_ix,2]
-
 ```
+
+Set up the model - don't forget that now we have time **and** an explanatory variable, so ```k=2```
 
 ```{r, echo=TRUE}
 real_data_future_forced = with(hadcrut,
@@ -305,11 +481,10 @@ real_data_future_forced = with(hadcrut,
                               q = 1,
                               p = 1,
                               k = 2))
-
 ```
 
-```{r, echo=TRUE}
-# Run the model
+Run the JAGS model
+```{r, echo=TRUE, message=FALSE}
 real_data_run_future_forced = jags(data = real_data_future_forced,
                             parameters.to.save = model_parameters,
                             model.file=textConnection(model_code),
@@ -320,6 +495,8 @@ real_data_run_future_forced = jags(data = real_data_future_forced,
 
 
 ```
+
+Get the predcitions from the model output and plot them up.
 
 ```{r, echo=TRUE}
 # Get the future values
@@ -341,4 +518,16 @@ lines(year_all,y_all_low,col='red',lty='dotted')
 lines(year_all,y_all_high,col='red',lty='dotted')
 with(hadcrut,lines(Year,Anomaly))
 ```
+
+***
+**Exercise 8**
+
+1. What is the difference in predictions when you include the explanatory forcing variable?
+
+2. How does this change if you use a different RCP scenario?
+
+3. (Harder) An ARIMAX prediction at time t is made up of four components: the overall mean, the ar terms, the ma terms, and the regression terms. Save these components individually in the 'parameters.to.save' argument and create a plot to show how important they are across the time series and how they behave in the future projections.
+
+
+***
 

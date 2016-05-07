@@ -98,8 +98,9 @@ plot(t,y)
 ```
 
 ***
-**Exercise 1**  
-Change the paramaters ```rho, sigma,``` and ```tau``` and see how the output changes. You might want to set the seed (uncomment the line) if you'd like to have the same output each time.
+**Exercise 1**
+
+1. Change the paramaters ```rho, sigma,``` and ```tau``` and see how the output changes. You might want to set the seed (uncomment the line) if you'd like to have the same output each time.
 
 ***
 
@@ -155,9 +156,11 @@ model_run = jags(data = model_data,
 ```
 
 ***
-**Exercise 2**  
-Print the ```model_run``` and check for convergence.
-Plot histograms of samples from ```alpha, sigma, tau``` and ```rho``` to see how well they are estimated.
+**Exercise 2**
+
+1. Print the ```model_run``` and check for convergence.
+
+2. Plot histograms of samples from ```alpha, sigma, tau``` and ```rho``` to see how well they are estimated.
 
 ***
 
@@ -201,8 +204,9 @@ pred_var = Sigma_star - t(Sigma_new)%*%solve(Sigma, Sigma_new)
 
 ***
 
-**Exercise 3**  
-Plot the mean prediction, and 95% CI
+**Exercise 3**
+
+1. Plot the mean prediction, and 95% CI
 
 ***
 
@@ -220,13 +224,11 @@ lines(t_new, pred_high, col = 'red', lty = 2)
 
 ***
 
-**Exercise 4**  
-Plot the mean prediction, and 95% CI
+**Exercise 4**
 
-***
+1. Plot the mean prediction, and 95% CI
 
-**Exercise 4**  
-Extend ```t``` out beyond the limits of where there are observation (i.e. t>1). What happens to the prediction mean and the uncertainty?
+2. Extend ```t``` out beyond the limits of where there are observation (i.e. t>1). What happens to the prediction mean and the uncertainty?
 
 ***
 
@@ -262,9 +264,9 @@ lines(t_ext, ext_high, col = 'blue', lty = 2)
 ## Summarise the uncertainty in the mean function
 
 ***
-
 **Exercise 5** 
-Show the uncertainty in the mean function. Sample a number of possible values of each parameter from their joint posterior distribution. Plot them as lines on the graph.
+
+1. Show the uncertainty in the mean function. Sample a number of possible values of each parameter from their joint posterior distribution. Plot them as lines on the graph.
 
 ***
 
@@ -320,10 +322,9 @@ lines(t_new, pred_samp, col='grey')
 ## Experiment with the GP
 
 ***
+**Exercise 6**
 
-Now set the number of points ```T``` to be very low - say 4 or 5. Increase sigma to get a less regular and smaooth timeseries.
-
-Put a very low prior on ```sigma``` (the nugget), and put a prior indicating a large value of ```tau```, which controls how fast the GP 'forgets'. What happens to the uncertainty bounds and the mean function?
+1. Set the number of points ```T``` to be very low - say 4 or 5. Increase sigma to get a less regular and smooth timeseries. Put a very low prior on ```sigma``` (the nugget), and put a prior indicating a large value of ```tau```, which controls how fast the GP 'forgets'. What happens to the uncertainty bounds and the mean function?
 
 ***
 
@@ -402,9 +403,9 @@ par(mfrow=c(1,1))
 ```
 
 ***
+**Bonus Exercise 1**
 
-**Exercise A.1**
-What happens when you extrapolate beyond the observation?
+1. What happens when you extrapolate beyond the observation?
 
 ***
 ```{r, include=TRUE}
@@ -433,9 +434,10 @@ lines(t_new, pred_high, col = 'red', lty = 2)
 
 ***
 
-**Exercise A.2**
-Include a linear term and corresponding parameter to estimate in the JAGS model. How does this change the fit of the GP, and what happens in extrapolation?
+**Bonus Exercise 2**
 
-Include a periodic term in the covariance function. Does this help in extrapolation?
+1. Include a linear term and corresponding parameter to estimate in the JAGS model. How does this change the fit of the GP, and what happens in extrapolation?
+
+2. Include a periodic term in the covariance function. Does this help in extrapolation?
 
 ***

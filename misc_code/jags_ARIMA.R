@@ -62,14 +62,14 @@ model
 {
   # Set up residuals
   for(t in 1:q) {
-    eps[t] <- z[t] - alpha
+    eps[t] <- y[t] - alpha
   }
   # Likelihood
   for (t in (q+1):T) {
-    z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
+    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
-    ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
-    eps[t] <- z[t] - alpha - ar_mean[t] - ma_mean[t]
+    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t]
   }
 
   # Priors
