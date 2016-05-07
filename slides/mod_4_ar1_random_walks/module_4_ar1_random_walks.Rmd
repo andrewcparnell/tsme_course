@@ -1,6 +1,6 @@
 ---
 title: "Random walks and AR(p) models"
-author: "Doug McNeall, Met Office"
+author: "Doug McNeall, Met Office & Andrew Parnell"
 output:
   ioslides_presentation:
     transition: slower

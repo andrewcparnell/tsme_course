@@ -31,28 +31,28 @@ p. 28
 
 ## The first time series example?
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/early_timeseries.jpg" width=60%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/early_timeseries.jpg" width=60%/></center>
 
 Tenth or eleventh century time series showing the position of the planets with time.
 http://euclid.psych.yorku.ca/SCS/Gallery/milestone/sec2.html
 
 ## Skipping forward a bit ...
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/Cruquius-Diagram-eclipse-1732.jpg" width=50%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/Cruquius-Diagram-eclipse-1732.jpg" width=50%/></center>
 
 Diagram showing the distance of the planets to the earth in 1732, also showing a complete lunar eclipse and a partial solar eclipse in that year
 Nicolaas Kruik 1678 - 1754 Dutch Astronomer & Meteorologist
 
 ## Lambert
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/lambert1779-graph.jpg" width=50%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/lambert1779-graph.jpg" width=50%/></center>
 
 A graph of solar warming vs. lattitude.  
 Johann Heinrich Lambert 1728 - 1777
 
 ## Application to economic data
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/Playfair_TimeSeries-2.png" width=60%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/Playfair_TimeSeries-2.png" width=60%/></center>
 Willaim Playfair's trade-balance time-series chart, published in his Commercial and Political Atlas, 1786
 
 ## Time Series Analysis: What's the point?
@@ -63,12 +63,12 @@ What do we use time series methods for? Often, we are trying to do at least one 
 2. Understanding: how is it going on, and why?
 3. Prediction: What is going to go on next?
 
-## First, description
+## First, description {.smaller}
 - HadCRUT4 Annual globally averaged surface temperature, from the Met Office Hadley Centre and Climate Research Unit, UEA.
 
 - How do we separate the **structure** (here the long term trend) and the random **noise**?
 ```{r plot hadcrut straight, echo=FALSE}
-hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly))
 # Is there a trend? (this could just be a slice from a random process, right?)
 # If yes, why is there a trend
@@ -78,14 +78,13 @@ with(hadcrut,plot(Year,Anomaly))
 ## Plot the data
 - Using a line plot gives a slightly different impression.
 ```{r plot hadcrut l, echo=FALSE}
-hadcrut = read.csv('~/GitHub/tsme_course/data/hadcrut.csv')
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly,type='l'))
-# perhaps plot a smoothed version?
 ```
 
 ## What is going on?
 We get a different impression again if we just plot the last 15 years ...  
-<center><img src="~/GitHub/tsme_course/slides/graphics/GWPF_closeup.png" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/GWPF_closeup.png" width=70%/></center>
 
 ## What is going on?
 
@@ -100,7 +99,7 @@ And, **how** does that randomness manifest?
 - Church and White
 - There appears relatively less noise in this data compared to the trend
 ```{r load sea level data, echo=FALSE}
-candw = read.csv('~/GitHub/tsme_course/data/church_and_white_global_tide_gauge.csv')
+candw = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
 with(candw,plot(year_AD,sea_level_m,type='l'))
 ```
 
@@ -112,6 +111,8 @@ We know there is **randomness** and **uncertainty** in the timeseries. We can us
 3. Model checking
 
 There are a number of **features** of time series and **concepts** that help in the process ...
+
+# Time series features & concepts
 
 ## Periodicity and cycles
 - Time series may show **periodicity** and **cycles** - often seasonal, but perhaps with more complexity.
@@ -129,22 +130,37 @@ plot(AirPassengers)
 ## Example - GISP2 stable isotope ratios in Greenland ice
 - This data shows **heteroskedacity** and **regime changes** and a lot of **structure**
 ```{r load gisp2 data, echo=FALSE}
-gisp2 = read.table('~/GitHub/tsme_course/data/gispd18o_raw.txt', na.strings = '999999')
+gisp2 = read.table('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/gispd18o_raw.txt', na.strings = '999999')
 colnames(gisp2) = c('Depth','d18o','Age')
 with(gisp2,plot(Age,d18o,type='l'))
 ```
 
-## Changes in variability & Heteroskedascticity
-- Monthly NH sea ice Anomaly from 1978 to present.
-- Monthly Central England Temperature (CET) from 1659 
 
 ## Autocorrelation and memory
 - **Autocorrelation** is the correlation of a random process **with itself** at a different time.
-- some created examples here
+
+```{r plot phi, echo=FALSE}
+ar1sim <- function(T=100, sigma=0.5, alpha=0, phi=0.6){
+  set.seed(123)
+  y = rep(NA,T)
+  y[1] = rnorm(1,0,sigma)
+  for(t in 2:T) y[t] = rnorm(1,alpha + phi*y[t-1], sigma)
+  y
+}
+par(mfrow = c(2,1), mar = c(2,4,0,1))
+plot(ar1sim(phi=0.9),type='l', ylim = c(-3,3))
+plot(ar1sim(phi=-0.9),type='l', ylim = c(-3,3))
+```
 
 ## Smoothing
 - When we smooth a timeseries, we are applying a filter to try and remove some of the randomness, and get at (or remove) the underlying structure.
 - We are making assumptions, and imposing structure. You have to put something in in order to get something out.
+
+```{r, echo=FALSE, fig.align='center'}
+hadcrut_smooth = lowess(hadcrut$Anomaly, f = 0.1)$y
+with(hadcrut, plot(Year, Anomaly, type = 'l'))
+lines(hadcrut$Year, hadcrut_smooth, type = 'l', col = 'red')
+```
 
 ## Stationarity
 - In a **stationary** timeseries **mean**, **variance** and **autocorrelation** structure do not change over time.
@@ -171,31 +187,30 @@ plot(lynx)
 
 - Reilly and Zeringue (2004) use a simple dynamic predator-prey model, trained on the first 80 years of data, to predict the last 34.
 - The simple model outperforms many of the best time series methods.
-<center><img src="~/GitHub/tsme_course/slides/graphics/lynx.png" width=40%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/lynx.png" width=40%/></center>
 - RMS error of 1480, compared to 1600 for SETAR method fit with entire data set.
 http://andrewgelman.com/2012/01/28/the-last-word-on-the-canadian-lynx-series/
 
 ## Forecasting is hard
 "Prediction is very difficult, especially about the future" - Niels Bohr
-<center><img src="~/GitHub/tsme_course/slides/graphics/bankofengland.png" width=50%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/bankofengland.png" width=50%/></center>
 (Graphic from D. Spiegelhalter)
 
 ## Forecasting is hard
-<center><img src="~/GitHub/tsme_course/slides/graphics/japan_fertility.png" width=65%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/japan_fertility.png" width=65%/></center>
 
 ## Forecasting is hard
-
-- Mills
-
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mills.jpg" width=45%/></center>
 
 
 ## In summary
 
-This course should help you:
+This course takes a practical approach, and should help you:
 
--
--
--
+- Understand modern Bayesian modelling techniques.
+- Understand your time series data, and the process that generates it.
+
+
 
 
 
