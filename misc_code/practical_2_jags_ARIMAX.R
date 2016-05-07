@@ -10,7 +10,7 @@
 
 # Some boiler plate code to clear the workspace, set the working directory, and load in required packages
 rm(list=ls()) # Clear the workspace
-setwd("~/GitHub/tsme_course/")
+#setwd("~/GitHub/tsme_course/")
 library(R2jags)
 
 # Maths -------------------------------------------------------------------
