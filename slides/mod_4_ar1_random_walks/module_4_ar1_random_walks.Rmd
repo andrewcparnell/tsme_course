@@ -50,14 +50,14 @@ $$ \hat{Y}_{t} = Y_{t-1} $$
 
 ## A random walk in two dimensions
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/301px-Random_walk_2500.svg.png" width=40%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/301px-Random_walk_2500.svg.png" width=40%/></center>
 
 ## A random walk in two dimensions
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/672px-Random_walk_25000_not_animated.svg.png" width=50%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/672px-Random_walk_25000_not_animated.svg.png" width=50%/></center>
 
 ## A random walk in two dimensions
-<center><img src="~/GitHub/tsme_course/slides/graphics/692px-Random_walk_2000000.png" width=55%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/692px-Random_walk_2000000.png" width=55%/></center>
 As the step size decreases, this process approaches **Brownian motion**
 
 ## Random walk applications
@@ -69,8 +69,8 @@ The steps don't have to be the same size.
 
 ## Levy flight vs Brownian motion
 
-<left><img src="~/GitHub/tsme_course/slides/graphics/364px-LevyFlight.svg.png" width=36%/></left>
-<right><img src="~/GitHub/tsme_course/slides/graphics/256px-BrownianMotion.svg.png" width=35%/></right>
+<left><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/364px-LevyFlight.svg.png" width=36%/></left>
+<right><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/256px-BrownianMotion.svg.png" width=35%/></right>
 
 There is evidence that animals such as sharks follow a levy flight pattern (left) when foraging for food - they had previously been thought to approximate Brownian motion (right)
 
@@ -79,7 +79,7 @@ There is evidence that animals such as sharks follow a levy flight pattern (left
 
 Annoyed with skeptics claiming solar cycles drive climate change, [Turner (2016)](http://www.nature.com/articles/srep23961) put random walks through a spectral filter, and got solar cycles.
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/Turner2016_RW.jpg" width=55%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/Turner2016_RW.jpg" width=55%/></center>
 
 ## But, how do we know that climate change is not a random walk?
 
@@ -311,7 +311,7 @@ lines(future_grid,future_low,lty='dotted',col='red')
 lines(future_grid,future_high,lty='dotted',col='red')
 lines(future_grid,future_med,col='red')
 ```
-There is more detail in [jags_random_walks.R](https://github.com/andrewcparnell/tsme_course/blob/master/misc_code/jags_random_walks.R)
+There is more detail in [jags_random_walks.R](https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/misc_code/jags_random_walks.R)
 
 # Fitting AR models in JAGS
 

@@ -1,7 +1,7 @@
 ---
 title: "Module 8 - Gaussian processes for time series analysis"
-author: "Doug McNeall"
-date: "1 May 2016"
+author: "Doug McNeall & Andrew Parnell"
+date: "12th May 2016"
 output: 
   ioslides_presentation: 
     transition: slower
@@ -29,11 +29,11 @@ We make the assumption that $y$ is ordered by $x$, we fit a curve to the points 
 
 ## Bayesian time series analysis
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf1.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/bayesf1.jpg" width=70%/></center>
 
 ## Bayesian time series analysis
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf2.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/bayesf2.jpg" width=70%/></center>
 
 ## Bayesian time series analysis
 
@@ -46,7 +46,7 @@ The solutions with tighter curves are **more complex** and contain **more assump
 
 ## Bayesian time series analysis
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/bayesf3.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/bayesf3.jpg" width=70%/></center>
 
 
 ## What is a Gaussian process?
@@ -61,7 +61,7 @@ The solutions with tighter curves are **more complex** and contain **more assump
 
 ## The multivariate Normal distribution for GPs
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn1.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn1.jpg" width=70%/></center>
 
 ## The multivariate Normal distribution for GPs
 
@@ -70,24 +70,24 @@ The solutions with tighter curves are **more complex** and contain **more assump
 
 ## The multivariate Normal distribution for GPs
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn2.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn2.jpg" width=70%/></center>
 
 
 ## Extend to a two-observation time series
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts1.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn_ts1.jpg" width=70%/></center>
 
 ## An observation on $x_1$ changes the conditional ditribution for $x_2$
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts2.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn_ts2.jpg" width=70%/></center>
 
 ## Or for a longer time series
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts3.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn_ts3.jpg" width=70%/></center>
 
 ## We can extend to continuous time
 
-<center><img src="~/GitHub/tsme_course/slides/graphics/mvn_ts4.jpg" width=70%/></center>
+<center><img src="https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/slides/graphics/mvn_ts4.jpg" width=70%/></center>
 
 ## The covariance function
 
@@ -105,8 +105,20 @@ $y$ is the vector of observations of $y_t$, a response variable at time $t$. We 
 
 $$ y \sim MVN(\mu, \Sigma)$$
 $\mu$ is some mean function and $\Sigma$ is a covariance matrix where 
-$$\Sigma_{ij} = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
+$$\Sigma_{ij} = k(x_{1}, x_{2}) = \tau^2 e^{-\rho(t_{i} - t_{j})^{2}}$$
 if $i \neq j$
+
+## The covariance matrix
+
+
+## Choices of covariance function
+
+- Squared
+- Straight
+- Matern?
+- Reasons 
+There is some good guidance on choosing correlation functions in the MUCM toolkit:
+http://mucm.aston.ac.uk/MUCM/MUCMToolkit/index.php?page=AltCorrelationFunction.html
 
 
 ## The nugget term
@@ -126,17 +138,7 @@ if $i=j$ (i.e. on the diagonal).
 <img src="~/GitHub/tsme_course/slides/graphics/nugget2.jpg" width=45%/>
 <img src="~/GitHub/tsme_course/slides/graphics/nugget3.jpg" width=45%/>
 
-## The covariance matrix
 
-
-## Choices of covariance function
-
-- Squared
-- Straight
-- Matern?
-- Reasons 
-There is some good guidance on choosing correlation functions in the MUCM toolkit:
-http://mucm.aston.ac.uk/MUCM/MUCMToolkit/index.php?page=AltCorrelationFunction.html
 
 ## Advantages of using GPs
 
