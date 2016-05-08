@@ -1,6 +1,6 @@
 ---
 title: 'Module 1: Time series for Ecologists and Climatologists: examples & goals'
-author: "Doug McNeall, Met Office"
+author: "Doug McNeall & Andrew Parnell"
 output:
   ioslides_presentation:
     transition: slower
@@ -208,6 +208,8 @@ http://andrewgelman.com/2012/01/28/the-last-word-on-the-canadian-lynx-series/
 This course takes a practical approach, and should help you:
 
 - Understand modern Bayesian modelling techniques.
+- Get and use tools for thinking about and dealing with uncertainty.
+- Fit time series models, and make predictions.
 - Understand your time series data, and the process that generates it.
 
 

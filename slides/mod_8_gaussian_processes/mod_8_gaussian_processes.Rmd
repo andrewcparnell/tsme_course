@@ -140,7 +140,6 @@ if $i=j$ (i.e. on the diagonal).
 - Freer in form than some models
 - Highly flexible, general and can apply to many problems
 - Can get some very good predictions
-
 - Lets the data "speak for itself"
 
 ## An example in regression
