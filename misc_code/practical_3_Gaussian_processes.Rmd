@@ -89,8 +89,8 @@ T = 20 # default is 20 can take to e.g T = 100 but fitting gets really slow ...
 alpha = 0 # default is 0
 sigma = 0.03 # default is 0.01
 tau = 1 # default is 1
-rho = 1000# default is 1
-#set.seed(123) # ensure reproducablility
+rho = 1# default is 1
+set.seed(123) # ensure reproducablility
 t = sort(runif(T))
 Sigma = sigma^2 * diag(T) + tau^2 * exp( - rho * outer(t,t,'-')^2 )
 y = mvrnorm(1,rep(alpha,T), Sigma)
