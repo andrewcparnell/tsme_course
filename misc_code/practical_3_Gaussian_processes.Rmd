@@ -181,12 +181,13 @@ hist(rho, breaks=30)
 Now we'll create some predictions of new values at new times
 Now create some predictions of new values at new times t^new
 These are bsed on the formula:
-y^new | y ~ N( Mu_new + Sigma_new^T solve(Sigma, y - Mu), Sigma_* - Sigma_new^T solve(Sigma, Sigma_new)
-where: 
-Mu^new[t] = alpha  
-Sigma_new[i,j] = tau^2 * exp( -rho * (t^new_i - t_j)^2 )
-Sigma_*[i,j] = tau^2 * exp( -rho * (t^new_i - t^new_j)^2 ) if i != j
-
+```{r, echo=TRUE}
+# y^new | y ~ N( Mu_new + Sigma_new^T solve(Sigma, y - Mu), Sigma_* - Sigma_new^T solve(Sigma, Sigma_new)
+# where: 
+# Mu^new[t] = alpha  
+# Sigma_new[i,j] = tau^2 * exp( -rho * (t^new_i - t_j)^2 )
+# Sigma_*[i,j] = tau^2 * exp( -rho * (t^new_i - t^new_j)^2 ) if i != j
+```
 
 ```{r, include=TRUE}
 T_new = 20
