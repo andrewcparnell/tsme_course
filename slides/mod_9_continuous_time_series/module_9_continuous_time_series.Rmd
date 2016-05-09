@@ -20,7 +20,7 @@ library(R2jags)
 
 - Understand the differences between continuous and discrete time series
 - Understand the basics of Brownian motion
-- Extend the AR model to the Ornstein Uhlenbeck process
+- Extend the AR model to the Ornstein-Uhlenbeck process
 - Ito formulation vs Euler-Maruyama methods
 - Forecasting and interpolation for continuous time models
 - Fit different types of change point models
@@ -113,7 +113,7 @@ hist(real_data_run$BUGSoutput$sims.list$alpha, breaks=30)
 hist(real_data_run$BUGSoutput$sims.list$sigma, breaks=30)
 ```
 
-## Interpolation
+## Interpolation {.smaller}
 
 - We can use the NA trick to create a new set of times at which we wish to predict $\delta^{18}$O
 - We need to be careful that we don't give JAGS any time values which have 0 differences as this will cause it to crash
@@ -191,7 +191,7 @@ with(mont, plot(Age, MTCO, type='l'))
 
 ## Monticchio output
 
-```{r, echo = FALSE, messages=FALSE}
+```{r, echo = FALSE, messages=FALSE, include=FALSE}
 # Remove duplpicate times - model will fail
 dup_times = which(diff(mont$Age)==0)
 mont2 = mont[-dup_times,]
@@ -220,7 +220,8 @@ real_data_run = jags(data = real_data,
                        n.iter=10000,
                        n.burnin=2000,
                        n.thin=8)
-
+```
+```{r}
 par(mfrow=c(1,3))
 hist(real_data_run$BUGSoutput$sims.list$alpha, breaks=30)
 hist(real_data_run$BUGSoutput$sims.list$theta, breaks=30)
@@ -242,7 +243,7 @@ $$dy = \theta ( \alpha - y ) dt + \sigma dW(t)$$
 
 ## Introduction to change point models
 
-- Another method commonly used for both discrete and continuous time stochastic processes is that change point modelling
+- Another method commonly used for both discrete and continuous time stochastic processes is that of change point modelling
 - The goal is to find one or more _change points_; times at which the time series changes in some structural way
 - We will study two versions of change point models; _discontinuous_, where there can be instantaneous jumps in the mean, and _continuous_ where there can be a jump in the rate of change of the mean, but subsections must link together
 
@@ -252,7 +253,7 @@ $$dy = \theta ( \alpha - y ) dt + \sigma dW(t)$$
 $$y(t) \sim N(\mu(t), \sigma^2)$$
 - For the discontinuous change point regression (DCPR) model with one change point
 $$\mu(t) = \left\{ \begin{array}{ll} \alpha_1 & \mbox{ if } t < t_1  \\
-\alpha_2 & \mbox{ if } t>=t_1 \end{array} \right.$$
+\alpha_2 & \mbox{ if } t \ge t_1 \end{array} \right.$$
 - Here, $\alpha_1$ and $\alpha_2$ are the mean before and after the change point respectively, and $t_1$ is a parameter which gives the time of the change in the mean
 - In JAGS we use the `step` function to determine which side of the change point a data point is currently on
 
@@ -286,7 +287,7 @@ model
 - The continuous change point regression model (CCPR) forces the segments to join together
 - The mean for this version is:
 $$\mu(t) = \left\{ \begin{array}{ll} \alpha + \beta_1 (t - t_1) & \mbox{ if } t < t_1  \\
-\alpha + \beta_2 (t - t_1) & \mbox{ if } t>=t_1 \end{array} \right.$$
+\alpha + \beta_2 (t - t_1) & \mbox{ if } t \ge t_1 \end{array} \right.$$
 - In this version $\beta_1$ and $\beta_2$ are the rates of change before and after the change point, $\alpha$ is the mean value of $y$ at the change point
 - Code for multiple change point models is given in the R code `jags_changepoint.R`. We can compare between them using DIC
 

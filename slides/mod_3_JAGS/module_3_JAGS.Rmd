@@ -2,11 +2,11 @@
 title: 'Module 3: The JAGS software with simple examples'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
     transition: slower
     widescreen: yes
-  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -53,7 +53,7 @@ There are several alternative ways of computing posterior distributions in `R` o
 - Store the model code in a string
 - Make sure it lists the likelihood and the priors clearly
 - Use `#` for comment, `<-` for assignment, and `~` for distributions
-- Refer bag to the [JAGS manual](https://sourceforge.net/projects/mcmc-jags/files/Manuals/) for more complicated functions
+- Refer back to the [JAGS manual](https://sourceforge.net/projects/mcmc-jags/files/Manuals/) for more complicated functions
 
 Example:
 ```{r}
@@ -107,10 +107,10 @@ model_run = jags(data = model_data,
 - It's quite fiddly to get at the parameters but this is the usual route:
 
 ```{r, fig.align='center', fig.height=3}
-hist( model_run$BUGSoutput$sims.list$theta, breaks = 30)
+hist(model_run$BUGSoutput$sims.list$theta, breaks = 30)
 ```
 
-## The Basics of Gibbs sampling in one slide
+## Gibbs sampling in one slide
 
 - Gibbs sampling is a trial and error algorithm. It starts with initial guesses of the parameters and then tries to find new ones which match the likelihood and prior better than the previous guesses
 - Over thousands and thousands of iterations it should eventually converge towards the most likely parameter values
@@ -151,7 +151,7 @@ This can be written in likelihood format as:
 $$y_t \sim N( \alpha + \beta x_t, \sigma^2)$$
 so we have three parameters, the intercept $\alpha$, the slope $\beta$, and the residual standard deviation $\sigma$. This latter parameter must be positive
 
-In the absence of further information, we might use the priors $\alpha \sim N(0,100^2), $\beta \sim N(0, 100^2), and $\sigma \sim U(0, 10)$
+In the absence of further information, we might use the priors $\alpha \sim N(0,100^2)$, $\beta \sim N(0, 100^2)$, and $\sigma \sim U(0, 10)$
 
 ## Example model code
 ```{r}
@@ -177,7 +177,7 @@ model
 See the file `jags_linear_regression.R` for more on this example
 
 ```{r, fig.align = 'center', fig.height = 4}
-sea_level = read.csv('https://goo.gl/5Ufz9E')
+sea_level = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
 with(sea_level,plot(year_AD,sea_level_m))
 ```
 
@@ -234,7 +234,7 @@ qqline(res)
 ## Example 2. logistic regression
 
 - Just like linear regression but this time the response is a count, usually restricted to have an upper value
-- We use a Binomial distribution and write:
+- If the data are binary we write:
 $$P(y_t = 1) = p_t; \mbox{logit}(p_t) = \alpha + \beta x$$
 where $\mbox{logit}(p_t) = \log( p_t / (1 - p_t ))$
 - The logit function changes $p_t$ from being restricted between 0 and 1, to having any value positive or negative 
@@ -247,7 +247,7 @@ $$y_t \sim Bin(K, p_t); \mbox{logit}(p_t) = \alpha + \beta x$$
 - The example in `jags_logistic_regression.R` has two explanatory variables, so:
 $$\mbox{logit}(p_t) = \alpha + \beta_1 x_{1t} + \beta_2 x_{2t}$$
 - We will again use vague priors on these (now three) parameters:
-$$\alpha ~ normal(0,10^2), beta_1 ~ normal(0,10^2), beta_2 ~ normal(0,10^2)$$
+$$\alpha \sim normal(0,10^2), beta_1 \sim normal(0,10^2), beta_2 \sim normal(0,10^2)$$
 - The data are adapted from Royla and Dorazio (Chapter 2), and concern the number of survivors of a set of moths based on sex ($x_1$) and the dose of an insecticide ($x_2$)
 - There are $T=12$ experiments, each with $K=20$ moths
 

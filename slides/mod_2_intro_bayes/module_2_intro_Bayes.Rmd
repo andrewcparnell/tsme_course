@@ -7,6 +7,7 @@ output:
     transition: slower
     widescreen: yes
   beamer_presentation: default
+  slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -72,7 +73,7 @@ $$p(\theta|x) = \frac{p(x|\theta) \times p(\theta)}{p(x)}$$
 
 - Let's suppose we want to estimate an unknown parameter $\theta$ which represents climate sensitivity
 - A set of previous studies have estimated climate sensitivity to be $3\pm 1.5^\circ C/W/m^2$ where $1.5$ represents one standard deviation. We will assume this is normally distributed and use this as a prior distribution, so $\theta \sim N(3, 1.5^2)$
-- We run a new climate model which gives us an estimate of $x=4.2$. Let's suppose that we know from previously running this model that the standard deviations of these runs is 2.5, 
+- We run a new climate model which gives us a new data point: $x=4.2^\circ C/W/m^2$. Let's suppose that we know from previously running this model that the standard deviations of these runs is $2.5^\circ C/W/m^2$, 
 - Our likelihood states that, if we knew $\theta$, the value $x$ would be normally distributed around $\theta$ with standard deviation 2.5, so $x \sim N(\theta, 2.5^2)$
 - We now need to use Bayes theorem to estimate the posterior distribution of climate sensitivity given our new run
 
@@ -262,11 +263,13 @@ The posterior distribution will usually be stored in a matrix where each row is 
 ## Summary so far: for and against Bayes
 
 For:
+
 - A Bayesian model can be simply displayed as a likelihood and a prior. Everything is explicit
 - JAGS finds the posterior distribution for us so we don't need to do any maths
 - We can get exactly the quantity we are interested in, the probability distribution of our unknowns given our knowns
 
 Against:
+
 - It can be hard to create a prior distribution (and a likelihood)
 - Not having p-values can make papers harder to publish (but this is changing)
 
@@ -293,11 +296,11 @@ There are a few exceptions later in the course (e.g. state-space models)
 
 ## General tips: 
 
-- Even if you lots of disparate data, try to build one model for all it. You'll be able to _borrow strength_ from the data (e.g. in a hierarchical model) and reduce the uncertainty in your parameter estimates
+- If you have lots of disparate data, try to build one model for all it. You'll be able to _borrow strength_ from the data (e.g. in a hierarchical model) and reduce the uncertainty in your parameter estimates
 
-- Try your hardest to use informative priors, and always justify the values you use (especially when trying to publish)
+- Try your hardest to use informative priors, and always justify the values you use (especially when trying to publish). In this course we're presenting generic versions so have almost always used vague priors
 
-- Check your model. Many of the usual requirements from traditional statistics (e.g. residual checks) are still relevant in the Bayesian world
+- Check your model. Many of the usual requirements from traditional statistics (e.g. residual checks) are still relevant in the Bayesian world. There are some extra Bayesian tricks we can also do; discussed in later lectures
 
 ## Summary
 

@@ -2,11 +2,11 @@
 title: 'Module 7: Models with changing variance and frequency models'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
     transition: slower
     widescreen: yes
-  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -119,7 +119,7 @@ plot(ice2$Age[-1],sigma_med,type='l',ylim=range(c(sigma_med[-1])))
 
 - The Generalised ARCH model works by simply adding the previous value of the variance, as well as the previous value of the observation
 - The GARCH(1,1) model thus has:
-$$\sigma_t^2 = \gamma_1 + \gamma_2 * (y_{t-1} - \alpha)^2 + \gamma_3 * \sigma_{t-1}^2$$
+$$\sigma_t^2 = \gamma_1 + \gamma_2 (y_{t-1} - \alpha)^2 + \gamma_3 \sigma_{t-1}^2$$
 - Strictly speaking $\gamma_1 + \gamma_2 < 1$ though like the stationarity conditions in ARIMA models we can relax this assumption and see if the data support it
 - It's conceptually easy to extend to general GARCH(p,q) models which add in extra previous lags
 
@@ -164,7 +164,7 @@ real_data_run_2 = jags(data = real_data,
 
 Have a look at the ARCH parameters;
 
-```{r}
+```{r, fig.height=4}
 par(mfrow=c(1,3))
 hist(real_data_run_2$BUGSoutput$sims.list$gamma_1, breaks=30, xlab = 'gamma 1')
 hist(real_data_run_2$BUGSoutput$sims.list$gamma_2, breaks=30, xlab = 'gamma 2')
@@ -195,13 +195,13 @@ with(r_2, print(c(DIC, pD)))
 
 - Both ARCH and GARCH propose a deterministic relationship for the current variance parameter
 - By contrast a Stochastic Volatility Model (SVM) models the variance as its own _stochastic process_
-- SVMs, ARCH and GARCH are all closely linked if you into the bowels of the theory
+- SVMs, ARCH and GARCH are all closely linked if you go into the bowels of the theory
 - The general model structure is often written as:
 $$y_t \sim N( \alpha, \exp( h_t ) )$$
 $$h_t \sim N( \mu + \phi ( h_{t-1} - \mu), \sigma^2)$$
 - You can think of an SVM being like a GLM but with a log link on the variance parameter
 
-## JAGS code for the SVM model
+## JAGS code for the SVM model {.smaller}
 ```{r}
 model_code = '
 model
@@ -275,7 +275,7 @@ Note quite as good, and many extra parameters due to $h$!
 - These data generally fall into two categories:
 
     1. Data where we know the frequency or frequencies (e.g. monthly data on a yearly cycle, frequency = 12)
-    2. Data where we want to esitmate the frequencies (e.g. climate time series, animal populations, etc)
+    2. Data where we want to estimate the frequencies (e.g. climate time series, animal populations, etc)
 
 - The former are much simpler, as we can e.g. use month as a covariate in an ARIMAX model, perform a seasonal difference with an ARIMA, or fit a full seasonal ARIMA model (though the JAGS code for this gets complicated)
 
@@ -286,7 +286,7 @@ Note quite as good, and many extra parameters due to $h$!
 - The most common way to estimate the frequencies in a time series is to decompose it in a _Fourier Series_
 
 - We write:
-$$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi f_k) + \gamma_k \cos (2 \pi f_k) \right] + \epsilon_t$$
+$$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi t f_k) + \gamma_k \cos (2 \pi t f_k) \right] + \epsilon_t$$
 
 - Each one of the terms inside the sum is called a _harmonic_. We decompose the series into a sum of sine and cosine waves rather than with AR and MA components
 
@@ -299,7 +299,7 @@ $$ y_t = \alpha + \sum_{k=1}^K \left[ \beta_k \sin (2 \pi f_k) + \gamma_k \cos (
 - However, it can be quite slow to fit and, if the number of frequencies $K$ is high, or the frequencies are close together, it can struggle to converge
 
 - More commonly, people repeatedly fit the simpler model:
-$$ y_t = \alpha + \beta \sin (2 \pi f_k) + \gamma \cos (2 \pi f_k) + \epsilon_t$$
+$$ y_t = \alpha + \beta \sin (2 \pi t f_k) + \gamma \cos (2 \pi t f_k) + \epsilon_t$$
 for lots of different values of $f_k$. Then calculate the _power spectrum_ as $P(f_k) = \frac{\beta^2 + \gamma^2}{2}$. Large values of the power spectrum indicate important frequencies
 
 - It's much faster to do this outside of JAGS, using other methods, but we will stick to JAGS
