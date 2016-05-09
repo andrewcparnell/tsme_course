@@ -2,7 +2,7 @@
 title: "Practical 2 - fitting ARIMA models in JAGS"
 author: "Doug McNeall & Andrew Parnell"
 date: "11th May 2016"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -464,8 +464,8 @@ We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmal
 ```{r, echo=TRUE}
 # replace '85' with '3PD' '45' or '6' to look at the other rcps,
 # or use the local file below.
-# rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
-rcpurl <- 'data/RCP45_MIDYEAR_RADFORCING.txt'
+rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
+#rcpurl <- 'data/RCP45_MIDYEAR_RADFORCING.txt'
 rcp <- read.table(file = rcpurl, skip = 59, header=TRUE)
 
 # Use the forcing data for both training and prediction

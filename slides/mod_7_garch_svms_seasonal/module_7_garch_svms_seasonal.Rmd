@@ -2,11 +2,11 @@
 title: 'Module 7: Models with changing variance and frequency models'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
     transition: slower
     widescreen: yes
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}

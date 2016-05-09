@@ -2,7 +2,7 @@
 title: "Practical 3 - Gaussian processes for time series"
 author: "Doug McNeall & Andrew Parnell"
 date: "12 May 2016"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
