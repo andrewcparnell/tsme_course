@@ -55,7 +55,7 @@ If you need help with a function, you can type ```?functionname``` into the comm
 
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE, echo = FALSE}
 hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 head(hadcrut)
 str(hadcrut)
@@ -105,7 +105,7 @@ Is there a relationship between a value of the timeseries and the next time step
 
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 with(hadcrut,
      plot(Anomaly[(1:length(Anomaly)-1)], Anomaly[2:length(Anomaly)])
      )
@@ -173,7 +173,7 @@ y = rnorm(T, mean = alpha + beta * x, sd = sigma)
 1. Change the parameters in the model and plot the results, to make sure you are happy with what each does.
 
 ***
-```{r, include=TRUE}
+```{r, include=FALSE}
 plot(x, y)
 lines(x, alpha + beta * x)
 ```
@@ -259,7 +259,7 @@ The jags function has created a sequence of samples from the posterior distribut
 
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 names(model_run)
 plot(model_run)
 print(model_run)
@@ -267,7 +267,7 @@ traceplot(model_run)
 ```
 
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 # Create a plot of the posterior mean regression line
 post = print(model_run)
 alpha_mean = post$mean$alpha
@@ -364,7 +364,7 @@ y = rbinom(T,1,p)
 
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 plot(x_1,y)
 plot(x_2,y) # Clearly when x is high y tends to be 0}
 ```
@@ -394,9 +394,11 @@ model
 
 1. Fit the logistic regression model to the data. You'll need to set up both of the input variables in the model data, and have a couple of beta parameters to estimate.
 
+2. Create two plots holding one of the variables fixed whilst varying the other.
+
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 # Set up the data
 model_data = list(T = T, y = y, x_1 = x_1, x_2 = x_2, K = 1)
 
@@ -414,7 +416,7 @@ model_run = jags(data = model_data,
 ```
 
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 # Check the output - are the true values inside the 95% CI?
 # Also look at the R-hat values - they need to be close to 1 if convergence has been achieved
 plot(model_run)
@@ -428,9 +430,8 @@ beta_1_mean = post$mean$beta_1
 beta_2_mean = post$mean$beta_2
 ```
 
-As we have two explanatory variables, we can create two plots holding one of the variables fixed whilst varying the other.
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 # As we have two explanatory variables I'm going to create two plots
 # holding one of the variables fixed whilst varying the other
 par(mfrow = c(2, 1))
@@ -468,7 +469,7 @@ sexcode = as.integer(sex == 'male')
 
 ***
 
-```{r, include=TRUE}
+```{r, include=FALSE}
 # Set up the data
 real_data = list(T = T, K = K, y = y, x_1 = sexcode, x_2 = dose)
 
