@@ -429,7 +429,9 @@ y_all_mean = apply(y_all,2,'mean')
 y_all_low = apply(y_all,2,'quantile',0.025) 
 y_all_high = apply(y_all,2,'quantile',0.975) 
 year_all = c(hadcrut$Year,year_future)
+```
 
+```{r, include=FALSE}
 # Plot these all together
 plot(year_all,
      y_all_mean,
@@ -460,8 +462,10 @@ We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmal
 
 ## Load the  forcing data
 ```{r, echo=TRUE}
-# replace '85' with '3PD' '45' or '6' to look at the other rcps
-rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
+# replace '85' with '3PD' '45' or '6' to look at the other rcps,
+# or use the local file below.
+# rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
+rcpurl <- 'data/RCP45_MIDYEAR_RADFORCING.txt'
 rcp <- read.table(file = rcpurl, skip = 59, header=TRUE)
 
 # Use the forcing data for both training and prediction
@@ -471,9 +475,18 @@ end_ix = which(rcp[,1]==2035)
 forcing_train = rcp[start_ix:end_ix,2]
 ```
 
-Set up the model - don't forget that now we have time **and** an explanatory variable, so ```k=2```
 
-```{r, echo=TRUE}
+***
+**Exercise 8**
+1. Set up the model - don't forget that now we have time **and** an explanatory variable, so ```k=2```
+
+2. Run the JAGS model
+
+3. Get the predcitions from the model output and plot them up.
+
+***
+
+```{r, include=FALSE}
 real_data_future_forced = with(hadcrut,
                               list(T = nrow(hadcrut) + T_future,
                               y = c(Anomaly, rep(NA,T_future)),
@@ -483,8 +496,8 @@ real_data_future_forced = with(hadcrut,
                               k = 2))
 ```
 
-Run the JAGS model
-```{r, echo=TRUE, message=FALSE}
+
+```{r, include=FALSE}
 real_data_run_future_forced = jags(data = real_data_future_forced,
                             parameters.to.save = model_parameters,
                             model.file=textConnection(model_code),
@@ -496,9 +509,7 @@ real_data_run_future_forced = jags(data = real_data_future_forced,
 
 ```
 
-Get the predcitions from the model output and plot them up.
-
-```{r, echo=TRUE}
+```{r, include=FALSE}
 # Get the future values
 y_all = real_data_run_future_forced$BUGSoutput$sims.list$y
 # If you look at the above object you'll see that the first columns are all identical because they're the data
@@ -520,7 +531,7 @@ with(hadcrut,lines(Year,Anomaly))
 ```
 
 ***
-**Exercise 8**
+**Exercise 9**
 
 1. What is the difference in predictions when you include the explanatory forcing variable?
 
