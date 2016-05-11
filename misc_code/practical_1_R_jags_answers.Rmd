@@ -214,6 +214,16 @@ We specify a likelihood and priors for each of the parameters. We specify a prio
 
 ***
 
+```{r, include=TRUE}
+
+alpha_grid = seq(from = -20, to = 20, length.out = 100)
+
+plot(alpha_grid, dnorm(alpha_grid, mean = 0, sd = 1/sqrt(3)), col = 'red', type = 'l' )
+
+lines(alpha_grid, dnorm(alpha_grid, mean = 0, sd = 1/sqrt(0.01)), type = 'l')
+
+```
+
 We set up the data as a list object so that we can get it into the ```jags``` function.
 
 ```{r, include=TRUE}

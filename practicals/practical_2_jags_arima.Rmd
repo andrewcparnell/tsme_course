@@ -69,22 +69,22 @@ We can simulate from an ARIMA model by choosing some parameters, and sequentiall
 
 ```{r, setup arima}
 # Some R code to simulate data from the above model
-p = 1 # Number of autoregressive terms
+p = 2 # Number of autoregressive terms
 d = 0 # Number of differences
 q = 1 # Numner of MA terms
 T = 100
 sigma = 1
 alpha = 0
-set.seed(123) # Ensures reproducability
-theta = runif(q)
+set.seed(124) # Ensures reproducability
+theta = sort(runif(q),decreasing=TRUE)
 phi = sort(runif(p),decreasing=TRUE)
 y = rep(NA,T)
-y[1:q] = rnorm(q,0,sigma)
+y[1:max(p,q)] = rnorm(max(p,q),0,sigma)
 eps = rep(NA,T)
-eps[1:q] = y[1:q] - alpha
-for(t in (q+1):T) {
+eps[1:max(p,q)] = y[1:max(p,q)] - alpha
+for(t in (max(p,q)+1):T) {
   ar_mean = sum( phi * y[(t-1):(t-p)] )
-  ma_mean = sum( theta * eps[(t-q):(t-1)] )
+  ma_mean = sum( theta * eps[(t-1):(t-q)] )
   y[t] = rnorm(1, mean = alpha + ar_mean + ma_mean, sd = sigma)
   eps[t] = y[t] - alpha - ma_mean - ar_mean
 }
@@ -106,11 +106,11 @@ model_code = '
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] <- y[t] - alpha
   }
   # Likelihood
-  for (t in (q+1):T) {
+  for (t in (max(p,q)+1):T) {
     y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
     ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
@@ -163,7 +163,7 @@ model_run = jags(data = model_data,
 
 We'll have a look at an ARIMA with explanatory (or exogenous) variables - the ARIMAX model.
 
-### Notation for the ARIMA model
+### Notation for the ARIMAX model
 
 ```{r, echo=TRUE}
 # Notation:
@@ -202,7 +202,7 @@ T = 100
 sigma = 1
 alpha = 0
 beta = c(3,1)
-set.seed(123)
+set.seed(124)
 theta = runif(q)
 phi = sort(runif(p),decreasing=TRUE)
 y = rep(NA,T)
@@ -212,7 +212,7 @@ eps = rep(NA,T)
 eps[1:q] = y[1:q] - alpha
 for(t in (q+1):T) {
   ar_mean = sum( phi * y[(t-1):(t-p)] )
-  ma_mean = sum( theta * eps[(t-q):(t-1)] )
+  ma_mean = sum( theta * eps[(t-1):(t-p)] )
   reg_mean = sum( x[t,]*beta )
   y[t] = rnorm(1, mean = alpha + ar_mean + ma_mean + reg_mean, sd = sigma)
   eps[t] = y[t] - alpha - ma_mean - ar_mean - reg_mean
@@ -234,11 +234,11 @@ model_code = '
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] <- y[t] - alpha
   }
   # Likelihood
-  for (t in (q+1):T) {
+  for (t in (max(p,q)+1):T) {
     y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
     ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
@@ -269,7 +269,7 @@ We'll set up the data and model parameters, and run the model. Note the inclusio
 
 ```{r, echo=TRUE, message=FALSE}
 # Set up the data
-model_data = list(T = T, y = y, x=x, q = 1, p = 1, k=2)
+model_data = list(T = T, y = y, x=x, q = 1, p = 1, k = 2)
 
 # Choose the parameters to watch
 model_parameters =  c("alpha","theta","phi","beta","sigma")
@@ -316,11 +316,11 @@ model_code = '
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] <- y[t] - alpha
   }
   # Likelihood
-  for (t in (q+1):T) {
+  for (t in (max(p,q)+1):T) {
     y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
     ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
@@ -464,8 +464,8 @@ We'll use some reference forcing data from [PIK](http://www.pik-potsdam.de/~mmal
 ```{r, echo=TRUE}
 # replace '85' with '3PD' '45' or '6' to look at the other rcps,
 # or use the local file below.
-# rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
-rcpurl <- 'data/RCP45_MIDYEAR_RADFORCING.txt'
+rcpurl <- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
+# rcpurl <- 'data/RCP45_MIDYEAR_RADFORCING.txt'
 rcp <- read.table(file = rcpurl, skip = 59, header=TRUE)
 
 # Use the forcing data for both training and prediction
