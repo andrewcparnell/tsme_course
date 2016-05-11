@@ -79,6 +79,8 @@ $$p(\theta|x) = \frac{p(x|\theta) \times p(\theta)}{p(x)}$$
 
 ## Example 1 continued
 
+<!-- asldkjfhsadfkljsdh -->
+
 ```{r,echo=FALSE,fig.align='center'}
 theta = seq(-2, 10, length = 100)
 likelihood = dnorm(4.2, mean = theta, sd = 2.5)
@@ -277,7 +279,7 @@ Against:
 
 - The likelihood we used previously, $x_i \sim N(\theta, \sigma^2)$ states that each model run (perhaps from separate GCMs) is providing evidence for _one_ climate sensitivity parameter. Is this realistic?
 - A slightly more realistic model would be $x_i \sim N(\theta_i, \sigma^2)$ where each climate model has its _own climate sensitivity parameter_
-- We can't fit this model because we don't have enough information to estimate a parameter from 1 data point from each climate model. We instead put a _prior_ such that $\theta_i ~ \sim(\theta_0,\sigma_0^2)$ and can put further prior distributions on $\theta_0$ and $\sigma_0$
+- We can't fit this model because we don't have enough information to estimate a parameter from 1 data point from each climate model. We instead put a _prior_ such that $\theta_i ~ \sim N(\theta_0,\sigma_0^2)$ and can put further prior distributions on $\theta_0$ and $\sigma_0$
 - We can now estimate each climate model's own climate sensitivity ($\theta_i$) and the overall climate sensitivity $\theta_0$
 - This is known as a hierarchical model
 

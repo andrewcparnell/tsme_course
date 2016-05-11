@@ -26,12 +26,13 @@ library(R2jags)
 # sigma = residual standard deviation
 # d = number of first differences
 # p and q = number of autoregressive and moving average components respecrively
+# We do the differencing outside the model so let z[t] = diff(y, differnces = d)
 # k = number of explanatory variables
 # beta = regression parameters
 # x = explanatory variables, a T by k matrix
 
 # Likelihood:
-# y[t] ~ N(alpha + phi[1] * y[t-1] + ... + phi[p] * y[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q} + beta[1]*x[t,1] + ... beta[k]*x[t,k], sigma^2)
+# z[t] ~ N(alpha + phi[1] * z[t-1] + ... + phi[p] * z[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q} + beta[1]*x[t,1] + ... beta[k]*x[t,k], sigma^2)
 # Priors - all vague here
 # alpha ~ N(0,100)
 # phi ~ N(0,100)
@@ -75,15 +76,15 @@ model
 {
   # Set up residuals
   for(t in 1:q) {
-    eps[t] <- y[t] - alpha
+    eps[t] <- z[t] - alpha
   }
   # Likelihood
   for (t in (q+1):T) {
-    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
+    z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t] + reg_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
-    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
+    ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
     reg_mean[t] <- inprod(beta, x[t,])
-    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
+    eps[t] <- z[t] - alpha - ar_mean[t] - ma_mean[t] - reg_mean[t]
   }
 
   # Priors
@@ -103,7 +104,7 @@ model
 '
 
 # Set up the data
-model_data = list(T = T, y = y, x=x, q = 1, p = 1, k=2)
+model_data = list(T = T, z = y, x=x, q = 1, p = 1, k=2)
 
 # Choose the parameters to watch
 model_parameters =  c("alpha","theta","phi","beta","sigma")
@@ -138,7 +139,7 @@ pacf(hadcrut$Anomaly)
 # Set up the data
 real_data = with(hadcrut,
                  list(T = nrow(hadcrut),
-                      y = Anomaly,
+                      z = Anomaly,
                       x = matrix(Year,ncol=1),
                       q = 1,
                       p = 1,
@@ -167,14 +168,14 @@ year_future = (max(hadcrut$Year)+1):(max(hadcrut$Year)+T_future)
 
 real_data_future = with(hadcrut,
                         list(T = nrow(hadcrut) + T_future,
-                             y = c(Anomaly, rep(NA,T_future)),
+                             z = c(Anomaly, rep(NA,T_future)),
                              x = matrix(c(Year,year_future),ncol=1),
                              q = 1,
                              p = 1,
                              k = 1))
 
 # Just watch y now
-model_parameters =  c("y")
+model_parameters =  c("z")
 
 # Run the model
 real_data_run_future = jags(data = real_data_future,
@@ -189,7 +190,7 @@ real_data_run_future = jags(data = real_data_future,
 print(real_data_run_future)
 
 # Get the future values
-y_all = real_data_run_future$BUGSoutput$sims.list$y
+y_all = real_data_run_future$BUGSoutput$sims.list$z
 # If you look at the above object you'll see that the first columns are all identical because they're the data
 y_all_mean = apply(y_all,2,'mean')
 # Also create the upper/lower 95% CI values

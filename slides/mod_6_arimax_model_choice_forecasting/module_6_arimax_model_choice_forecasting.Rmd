@@ -44,14 +44,14 @@ jags_ARIMAX.R
 - As an example, suppose our response variable $y_t$ was actually binary; we can't use the default ARIMA framework
 - Instead use ideas from logistic regression, e.g. the logistic-AR model:
 $$y_t \sim Bin(1, p_t);\; \mbox{logit}(p_t) = \alpha + \phi p_{t-1}$$
-- What if the response variable is unbounded counts, no problem! The Poisson AR model:
-$$y_t \sim Poisson(\lambda_t);\; \log(p_t) = \alpha + \phi p_{t-1}$$
+- What if the response variable is unbounded counts? No problem! The Poisson AR model:
+$$y_t \sim Poisson(\lambda_t);\; \log(\lambda_t) = \alpha + \lambda p_{t-1}$$
 - In JAGS, we can adapt any of the time series to any GLM situation
 
 ## The ARIMAX framework
 
 - The ARIMAX framework (ARIMA with eXplanatory variables) is just another such extension which is easy to add in JAGS
-- We ARIMAX model is:
+- The ARIMAX model is:
 $$z_t \sim N(\alpha + \mbox{AR terms} + \mbox{MA terms} + \beta_1 x_{1t} + \ldots \beta_r x_{rt}, \sigma^2)$$
 where we now include $r$ possible explanatory variables with coefficients $\beta_1, \ldots,\beta_r$
 - This can be easily added to the code in JAGS

@@ -22,8 +22,9 @@ library(R2jags)
 # sigma = residual standard deviation
 # d = number of first differences
 # p and q = number of autoregressive and moving average components respecrively
+# We do the differencing outside the model so let z[t] = diff(y, differnces = d)
 # Likelihood:
-# y ~ N(alpha + phi[1] * y[t-1] + ... + phi[p] * y[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q}, sigma^2)
+# z[t] ~ N(alpha + phi[1] * z[t-1] + ... + phi[p] * z[y-p] + theta_1 ept_{t-1} + ... + theta_q eps_{t-q}, sigma^2)
 # Priors
 # alpha ~ N(0,100)
 # phi ~ N(0,100) - need to be a bit careful with these if you want the process to remain stable
@@ -62,14 +63,14 @@ model
 {
   # Set up residuals
   for(t in 1:q) {
-    eps[t] <- y[t] - alpha
+    eps[t] <- z[t] - alpha
   }
   # Likelihood
   for (t in (q+1):T) {
-    y[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
+    z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
-    ar_mean[t] <- inprod(phi, y[(t-p):(t-1)])
-    eps[t] <- y[t] - alpha - ar_mean[t] - ma_mean[t]
+    ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
+    eps[t] <- z[t] - alpha - ar_mean[t] - ma_mean[t]
   }
 
   # Priors
@@ -86,7 +87,7 @@ model
 '
 
 # Set up the data
-model_data = list(T = T, y = y, q = 1, p = 1)
+model_data = list(T = T, z = y, q = 1, p = 1)
 
 # Choose the parameters to watch
 model_parameters =  c("alpha","theta","phi","sigma")

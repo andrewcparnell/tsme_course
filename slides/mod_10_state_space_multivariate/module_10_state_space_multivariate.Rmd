@@ -1,0 +1,66 @@
+---
+title: 'Module 10: State space models and multivariate time series'
+author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
+output:
+  ioslides_presentation:
+    logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
+    transition: slower
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(latex2exp)
+library(R2jags)
+```
+
+
+## Learning outcomes
+
+- Learn the basics of parameter and state estimation for simple state space models
+- Create and fit some basic multivariate time series models
+- Understand the state of the art in time series models, including latent factor models, dynamic parameter models,
+
+Relevant JAGS file:
+```
+jags_statespace.R
+jags_multivariate_AR.R
+jags_multivariate_statespace.R
+```
+
+## Introduction to state space models
+
+## JAGS code for a linear state space model
+
+## Priors for state space models
+
+## Example: palaeoclimate reconstruction
+
+## Palaeoclimate reconstruction results
+
+## Introduction to multivariate models
+
+## The Vector AR model
+
+## JAGS code for the VAR model
+
+## Example
+
+## Multivariate state-space models
+
+## Example: Palaeoclimate reconstruction
+
+## Mixing up Gaussian processes and state space models
+
+## Co-integrated models
+
+## Other types of multivariate model
+
+## Multivariate Gaussian processes
+
+## Dynamic linear models
+
+## Latent factor time series models
+
+## Summary

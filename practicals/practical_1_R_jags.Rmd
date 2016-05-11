@@ -249,7 +249,7 @@ The jags function has created a sequence of samples from the posterior distribut
 
 1. Use the ```names()``` function to examine the structure of the ```model_run``` object. 
 
-2. Use the ```plot()```, print() and ```trace_plot()``` functions on your ```model_run``` object to check the output.  
+2. Use the ```plot()```, print() and ```traceplot()``` functions on your ```model_run``` object to check the output.  
 
 3. Are the true values inside the 95% CI (confidence interval)?  
 
@@ -286,7 +286,7 @@ legend('topleft',
 ***
 **Bonus exercises**
 
-1. With the simulated data, experiment with changing the value of N when creating the data? What happens to the posterior distribution of the parameters as N gets bigger?
+1. With the simulated data, experiment with changing the value of T when creating the data? What happens to the posterior distribution of the parameters as T gets bigger?
 
 2. Try experimenting with the priors. Suppose that you *knew* that beta was negative and used the prior beta ~ dunif(-2,-1). What happens to the posterior mean lines?
 
