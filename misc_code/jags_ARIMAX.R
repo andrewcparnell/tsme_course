@@ -75,7 +75,7 @@ model_code = '
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] <- z[t] - alpha
   }
   # Likelihood
