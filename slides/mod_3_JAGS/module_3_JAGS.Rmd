@@ -11,9 +11,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(latex2exp)
 library(boot)
-#setwd("~/GitHub/tsme_course")
 ```
 
 ## Learning outcomes

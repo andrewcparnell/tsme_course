@@ -2,11 +2,11 @@
 title: 'Module 5: Moving Average and ARIMA models'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
     transition: slower
     widescreen: yes
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -222,11 +222,11 @@ model_code = '
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] <- z[t] - alpha
   }
   # Likelihood
-  for (t in (q+1):T) {
+  for (t in (max(p,q)+1):T) {
     z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
     ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])
@@ -264,14 +264,14 @@ acf(diff(hadcrut$Anomaly))
 pacf(diff(hadcrut$Anomaly))
 ```
 
-## Fitting the model ARIMA(3,1,3)
+## Fitting the model ARIMA(3,1,2)
 
 ```{r, results='hide', message=FALSE}
 d = 1
 real_data = with(hadcrut,
                  list(T = nrow(hadcrut)-d,
                       z = diff(hadcrut$Anomaly, differences = d),
-                      q = 3,
+                      q = 2,
                       p = 3))
 
 model_parameters =  c("alpha","theta","phi","sigma")

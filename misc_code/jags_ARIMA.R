@@ -66,7 +66,7 @@ model
     eps[t] <- z[t] - alpha
   }
   # Likelihood
-  for (t in (q+1):T) {
+  for (t in (max(p,q)+1):T) {
     z[t] ~ dnorm(alpha + ar_mean[t] + ma_mean[t], tau)
     ma_mean[t] <- inprod(theta, eps[(t-q):(t-1)])
     ar_mean[t] <- inprod(phi, z[(t-p):(t-1)])

@@ -12,8 +12,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#install.packages('latex2exp')
-library(latex2exp)
 ```
 
 
@@ -86,7 +84,7 @@ theta = seq(-2, 10, length = 100)
 likelihood = dnorm(4.2, mean = theta, sd = 2.5)
 prior = dnorm(theta, mean = 3, sd = 1.5)
 par(mar=c(3,3,2,1), mgp=c(2,.7,0), tck=-.01,las=1)
-plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.04),xlab=TeX('$\\theta$ (climate sensitivity)'))
+plot(theta,likelihood/sum(likelihood),type='l',ylab='Probability',ylim=c(0,0.04),xlab='theta (climate sensitivity)')
 lines(theta,prior/sum(prior),col='red')
 posterior = prior*likelihood
 lines(theta,posterior/sum(posterior),col='blue')
@@ -194,8 +192,8 @@ sigma_post = model_run$BUGSoutput$sims.list$sigma
 ```
 ```{r, echo=FALSE,fig.align='center',fig.width=10}
 par(mfrow=c(1,2))
-plot(density(theta_post), xlab = TeX('$\\theta$'),las = 1, main ='')
-plot(density(sigma_post), xlab = TeX('$\\sigma$'),las = 1, main ='')
+plot(density(theta_post), xlab = 'theta',las = 1, main ='')
+plot(density(sigma_post), xlab = 'theta',las = 1, main ='')
 par(mfrow=c(1,1))
 ```
 Posterior mean of $\theta$ is now `r round(mean(theta_post),2)` $^\circ C/W/m^2$  and standard deviation is `r round(sd(theta_post),2)` $^\circ C/W/m^2$ 
