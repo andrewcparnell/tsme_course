@@ -197,7 +197,7 @@ $y_t - 2 y_{t-1} + y_{t-2}$ is the second difference of $y_t$
 - The ARIMA model is written as ARIMA(p,d,q) where $p$ and $q$ are as before and $d$ is the number of differences. 
 - If we want to fit an ARIMA(1,1,1) model we first let $z_t = y_t - y_{t-1}$ then run the model:
 $$z_t \sim N( \alpha + \phi z_{t-1} + \theta \epsilon_{t-1}, \sigma^2 )$$
-- This is an ARIMA model on the first differences
+- This is an ARMA model on the first differences
 
 ## General format: the ARIMA(p,d,q) model
 
