@@ -67,19 +67,24 @@ model
   # Priors
   for(i in 1:k) {
     A[i] ~ dnorm(0, 0.01)
-    for(j in 1:k) {
-      Phi[i,j] ~ dnorm(0, 0.01)
+    Phi[i,i] ~ dunif(-1, 1)
+    Sigma.Inv[i,i] <- 1/pow(sigma[i], 2)
+    for(j in (i+1):k) {
+      Phi[i,j] ~ dunif(-1,1)
+      Phi[j,i] ~ dunif(-1,1)
+      Sigma.Inv[i,j] <- 0
+      Sigma.Inv[j,i] <- 0
     }
+    sigma[i] ~ dunif(0, 10)
   }
-  Sigma.Inv ~ dwish(I, k+1)
 }
 '
 
 # Set up the data
-model_data = list(T = T, k = k, y = y, I = diag(k))
+model_data = list(T = T, k = k, y = y)
 
 # Choose the parameters to watch
-model_parameters =  c("A", "Phi", "Sigma.Inv")
+model_parameters =  c("A", "Phi", "sigma")
 
 # Run the model
 model_run = jags(data = model_data,
@@ -99,11 +104,85 @@ print(model_run) # Results look pretty good
 
 # Can we fit a vector AR model to both the sea level and global temperature
 # series?
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+sea_level = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
+head(hadcrut)
+head(sea_level)
 
+# Correct the sea level ages
+sea_level$Year2 = sea_level$year_AD-0.5
+
+# Merge them together
+bivariate_data = merge(hadcrut, sea_level, by.x='Year', by.y='Year2')
+
+# Plot the two of them together
+par(mfrow=c(2,1))
+with(bivariate_data, plot(Year, Anomaly, type='l'))
+with(bivariate_data, plot(Year, sea_level_m, type='l'))
+par(mfrow=c(1,1))
+
+# Perhaps run on differences
+par(mfrow=c(2,1))
+with(bivariate_data, plot(Year[-1], diff(Anomaly), type='l'))
+with(bivariate_data, plot(Year[-1], diff(sea_level_m), type='l'))
+par(mfrow=c(1,1))
+
+# Create the data
+real_data = with(bivariate_data,
+                 list(T = nrow(bivariate_data)-1,
+                      y = apply(bivariate_data[,c('Anomaly', 'sea_level_m')],2,'diff'),
+                      k = 2))
+
+# Run the model
+real_data_run = jags(data = real_data,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+
+# Plot output
+print(real_data_run)
+plot(real_data_run)
+
+# Let's create some joint predictions off into the future
+n_forecast = 10
+
+real_data_future = with(bivariate_data,
+                 list(T = nrow(bivariate_data) + n_forecast - 1,
+                      y = rbind(as.matrix(apply(bivariate_data[,c('Anomaly', 'sea_level_m')],2,'diff')), matrix(NA, ncol=2, nrow=n_forecast)),
+                      k = 2))
+
+# Choose the parameters to watch
+model_parameters =  c("y")
+
+real_data_run_future = jags(data = real_data_future,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=1000,
+                     n.burnin=200,
+                     n.thin=2)
+
+plot(real_data_run_future)
+
+y_future_pred = real_data_run_future$BUGSoutput$mean$y
+year_all = c(bivariate_data$Year[-1],2010:(2010+n_forecast))
+
+# Create plots
+par(mfrow=c(2,1))
+plot(year_all[-1], y_future_pred[,1], col='red', type='l')
+with(bivariate_data, lines(Year, diff(Anomaly)))
+plot(year_all[-1], y_future_pred[,2], col='red', type='l')
+with(bivariate_data, lines(Year, diff(sea_level_m)))
+par(mfrow=c(1,1))
 
 
 
 # Other tasks -------------------------------------------------------------
+
+
 
 # Perhaps exercises, or other general remarks
 

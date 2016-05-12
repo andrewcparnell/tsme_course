@@ -403,7 +403,7 @@ with(hadcrut,plot(Year,Anomaly,type='l'))</code></pre>
 model
 {
   # Set up residuals
-  for(t in 1:q) {
+  for(t in 1:max(p,q)) {
     eps[t] &lt;- y[t] - alpha
   }
   # Likelihood
@@ -534,11 +534,6 @@ year_all = c(hadcrut$Year,year_future)</code></pre>
 <pre class="r"><code># replace '85' with '3PD' '45' or '6' to look at the other rcps,
 # or use the local file below.
 rcpurl &lt;- 'http://www.pik-potsdam.de/~mmalte/rcps/data/RCP85_MIDYEAR_RADFORCING.DAT'
-<<<<<<< HEAD
-#rcpurl &lt;- 'data/RCP45_MIDYEAR_RADFORCING.txt'
-=======
-# rcpurl &lt;- 'data/RCP45_MIDYEAR_RADFORCING.txt'
->>>>>>> 46abd0b4c335a932d317879b70411857f9e8109c
 rcp &lt;- read.table(file = rcpurl, skip = 59, header=TRUE)
 
 # Use the forcing data for both training and prediction

@@ -35,7 +35,7 @@ Time  | Class
 15:30-16:00 | Break
 16:00-17:30 | Discussion: Advantages and disadvantages of ARIMA modelling
 
-## Thursday 12th May
+<!--## Thursday 12th May
 
 Time  | Class
 ------------- | ----------------------------------------------------
@@ -46,7 +46,21 @@ Time  | Class
 12:00-12:45 | Fitting Gaussian processes in JAGS (DM) [Practical 3](https://rawgit.com/andrewcparnell/tsme_course/master/practicals/practical_3_Gaussian_processes.html) 
 12:45-14:00 | Lunch 
 14:00-15:00 | Fitting Gaussian processes in JAGS (continued)
-15:00 | Excursion
+15:00 | Excursion-->
+
+## Thursday 12th May
+
+Time  | Class
+------------- | ----------------------------------------------------
+9:15-10:00 | Models with changing variance and seasonality (AP) [Module 7](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_7_garch_svms_seasonal/module_7_garch_svms_seasonal.html)
+10:00-10:45 | Discussion and coffee 
+10:45-11:30 | Models for continuous time series (AP) [Module 9](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_9_continuous_time_series/module_9_continuous_time_series.html)
+11:30-12:00 | Discussion and break 
+12:00-12:45 | Gaussian processes for time series (DM) [Module 8](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_8_gaussian_processes/mod_8_gaussian_processes.html)
+12:45-14:00 | Lunch 
+14:00-15:30 | Fitting Gaussian processes in JAGS (DM) [Practical 3](https://rawgit.com/andrewcparnell/tsme_course/master/practicals/practical_3_Gaussian_processes.html) 
+15:30-16:00 | Break
+16:00-17:30 | Discussion: Gaussian Processes
 
 ## Friday 13th May
 
