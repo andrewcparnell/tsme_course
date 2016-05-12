@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
 library(latex2exp)
 library(R2jags)
 ```
@@ -20,7 +20,7 @@ library(R2jags)
 
 - Learn the basics of parameter and state estimation for simple state space models
 - Create and fit some basic multivariate time series models
-- Understand the state of the art in time series models, including latent factor models, dynamic parameter models,
+- Understand the state of the art in time series models, including latent factor models and dynamic parameter models
 
 Relevant JAGS file:
 ```
@@ -31,36 +31,231 @@ jags_multivariate_statespace.R
 
 ## Introduction to state space models
 
+- State space models are a very general family of models that are used when we have a noisy time series of observations that are stochastically related to a hidden time series which is what we are really interested in 
+- For example they are used for palaeoclimate reconstruction when we observe pollen but are really interested in climate  
+- All state space models have two parts:
+
+  - The first part is called the _state equation_ which links the observations to a latent _stochatic process_
+  - The second part of the model is called the _evoluation equation_ which determines how the latent stochastic process changes over time
+
+## A simple linear state space model
+
+- We define $y_t$ in the usual way, but write $x_t$ for the hidden stochastic process
+- For a simple linear state space model we have a _state equation_ of:
+$$ y_t = \alpha_y + \beta_y x_t + \epsilon_t,\; \epsilon_t \sim N(0, \sigma_y^2)$$
+- The _evolution equation_ could be a random walk:
+$$ x_t = x_{t-1} + \gamma_t,\; \gamma_t \sim N(0, \sigma_x^2)$$
+- The usual aim when fitting these models is to either estimate $x_t$, or the parameters, or to predict future values of $x_t$
+- This type of model is sometimes known as the _Kalman Filter_
+
 ## JAGS code for a linear state space model
+
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 1:T) {
+    y[t] ~ dnorm(alpha_y + beta_y * x[t], tau_y)
+  }
+  x[1] ~ dnorm(0, 0.01)
+  for (t in 2:T) {
+    x[t] ~ dnorm(x[t-1], tau_x)
+  }
+
+  # Priors
+  tau_y <- 1/pow(sigma_y, 2)
+  sigma_y ~ dunif(0, 100)
+  tau_x <- 1/pow(sigma_x, 2)
+  sigma_x ~ dunif(0, 100)
+  }
+'
+```
 
 ## Priors for state space models
 
+- You need to be very careful with state space models as it's very easy to create models which are ill-defined and crash
+- For example, in the Kalman filter model before you can switch the sign of $x_t$ and $\beta_y$ and still end up with the same model
+- It's advisable to either fix some of the parameters, or use extra data to calibrate the parameters of the state space model
+- You can do better if you have multivariate observations or stricter requirements about the time series applied to $x_t$
+
 ## Example: palaeoclimate reconstruction
+
+```{r}
+palaeo = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/palaeo.csv')
+par(mfrow=c(2,1))
+with(palaeo,plot(year, proxy))
+with(palaeo,plot(year, temp)) # Only available for a subset
+```
 
 ## Palaeoclimate reconstruction results
 
+```{r, echo=FALSE, messages=FALSE, results='hide', include=FALSE}
+# Estimate the parameters
+pars = lm(proxy ~ temp, data = palaeo)
+
+# Set up the data - need the values for the hyper parameters her
+real_data = list(T = nrow(palaeo),
+                  y = palaeo$proxy,
+                  alpha_y = coef(pars)[1],
+                  beta_y = coef(pars)[2])
+
+# Choose the parameters to watch
+model_parameters =  c("sigma_y", "sigma_x", "x")
+
+# Run the model
+real_model_run = jags(data = real_data,
+                 parameters.to.save = model_parameters,
+                 model.file=textConnection(model_code),
+                 n.chains=4, # Number of different starting positions
+                 n.iter=10000, # Number of iterations
+                 n.burnin=2000, # Number of iterations to remove at start
+                 n.thin=8) # Amount of thinning
+```
+```{r, echo=FALSE}
+x_mean = apply(real_model_run$BUGSoutput$sims.list$x,2,'mean')
+x_lo = apply(real_model_run$BUGSoutput$sims.list$x,2,'quantile', 0.025)
+x_hi = apply(real_model_run$BUGSoutput$sims.list$x,2,'quantile', 0.975)
+with(palaeo,plot(year, temp))
+lines(palaeo$year, x_mean, col='blue')
+lines(palaeo$year, x_lo, col='blue')
+lines(palaeo$year, x_hi, col='blue')
+legend('topleft',
+       legend = c('data', 'estimated'),
+       lty = c(-1, 1),
+       pch = c(1, -1),
+       col = c('black', 'blue'))
+```
+
 ## Introduction to multivariate models
 
-## The Vector AR model
+- Often we have multiple different observations at each time and we want to model them together
+- For example, we might have multiple different climate variables observed, or multiple chemical signatures. If they are correlated then by fitting them separately we will lose precision
+- If the observations are observed at different times for each time series we can use the NA trick, or create a latent state space model on which all measurements are regular
 
-## JAGS code for the VAR model
+## The Vector AR model {.smaller}
 
-## Example
+- We can extend most of the models we have met to multivariate scenarios by applying the multivariate normal distribution instead of the univariate version
+- Suppose now that $y_t$ is a vector of length $k$ containing all the observations at time $t$
+- We can write:
+$$y_t = A + \Phi y_{t-1} + \epsilon_t,\; \epsilon_t \sim MVN(0, \Sigma)$$
+or equivalently 
+$$y_t \sim MVN(A + \Phi y_{t-1}, \Sigma)$$
+- where MVN is the multivariate normal distribution
+- Here the parameter vector $A$ controls the overall mean level for each of the $k$ series, $\Phi$ is a $k \times k$ matrix which controls the influence on the current value of the previous time points of _both_ series
+- $\Sigma$ here is a $k \times k$ matrix that controls the variance of the process and the residual correlation between the two series (NB: this is different from the GP formulation we met yesterday)
 
-## Multivariate state-space models
+## JAGS code for the VAR model {.smaller}
 
-## Example: Palaeoclimate reconstruction
+```{r}
+model_code = '
+model
+{
+  # Likelihood
+  for (t in 2:T) {
+    y[t, ] ~ dmnorm(mu[t, ], Sigma.Inv)
+    mu[t, 1:k] <- A + Phi %*% y[t-1,]
+  }
+  Sigma.Inv ~ dwish(I, k+1)
+  Sigma <- inverse(Sigma.Inv)  
 
-## Mixing up Gaussian processes and state space models
+  # Priors
+  for(i in 1:k) {
+    A[i] ~ dnorm(0, 0.01)
+    Phi[i,i] ~ dunif(-1, 1)
+    for(j in (i+1):k) {
+      Phi[i,j] ~ dunif(-1,1)
+      Phi[j,i] ~ dunif(-1,1)
+    }
+  }
+}
+'
+```
 
-## Co-integrated models
+## Example: joint temperature/sea level models
 
-## Other types of multivariate model
+```{r, include=FALSE}
+hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+sea_level = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
+head(hadcrut)
+head(sea_level)
 
-## Multivariate Gaussian processes
+# Correct the sea level ages
+sea_level$Year2 = sea_level$year_AD-0.5
+
+# Merge them together
+bivariate_data = merge(hadcrut, sea_level, by.x='Year', by.y='Year2')
+
+# Perhaps run on differences
+```
+```{r}
+par(mfrow=c(2,1))
+with(bivariate_data, plot(Year[-1], diff(Anomaly), type='l'))
+with(bivariate_data, plot(Year[-1], diff(sea_level_m), type='l'))
+```
+
+## VAR model results:
+
+```{r, include=FALSE}
+n_forecast = 10
+
+real_data_future = with(bivariate_data,
+                 list(T = nrow(bivariate_data) + n_forecast - 1,
+                      y = rbind(as.matrix(apply(bivariate_data[,c('Anomaly', 'sea_level_m')],2,'diff')), matrix(NA, ncol=2, nrow=n_forecast)),
+                      k = 2,
+                      I = diag(2)))
+
+# Choose the parameters to watch
+model_parameters =  c("y")
+
+real_data_run_future = jags(data = real_data_future,
+                     parameters.to.save = model_parameters,
+                     model.file=textConnection(model_code),
+                     n.chains=4,
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
+
+y_future_pred = real_data_run_future$BUGSoutput$sims.list$y
+y_future_med = apply(y_future_pred,c(2,3),'median')
+year_all = c(bivariate_data$Year[-1],2010:(2010+n_forecast))
+```
+```{r, echo=FALSE}
+# Create plots
+par(mfrow=c(2,1))
+plot(year_all[-1]-1, bivariate_data$Anomaly[1]+cumsum(y_future_med[,1]), col='red', type='l')
+with(bivariate_data, lines(Year, Anomaly))
+plot(year_all[-1]-1, bivariate_data$sea_level_m[1]+cumsum(y_future_med[,2]), col='red', type='l')
+with(bivariate_data, lines(Year, sea_level_m))
+```
+
+## Mixing up state space models, multivariate time series, Gaussian processes
+
+- We can extend the simple state space model we met earlier to work for multivariate series
+- We would have a state equation that relates our observations to a multivariate latent time series (possibly of a different dimension)
+- We could change the time series model of the latent state to be an ARIMA model, an O-U process, a Gaussian process, or anything else you can think of!
 
 ## Dynamic linear models
 
+- So far in all our models we have forced the time series parameters to be constant over time
+- In a _Dynamic Linear Model_ we have a state space model with :
+$$ y_t = F_t x_t + \epsilon_t,\; \epsilon_t \sim MVN(0, \Sigma_t)$$
+$$ x_t = G_t x_{t-1} + \gamma_t,\; \gamma_t \sim N(0, \Psi_t)$$
+- The key difference here is that the transformation matrices $F_t$ and $G_t$ can change over time, as can the variance matrices $\Sigma_t$ and $\Psi_t$, possibly in an ARCH/GARCH type framework
+- These are very hard models to fit in jags but simple versions can work
+
 ## Latent factor time series models
 
+- If we have very many series, a common approach to reduce the dimension is to use Factor Analysis or Principal components
+- In a latent factor model we write:
+$$y_t = B f_t + \epsilon_t$$
+where now $B$ is a $num series \times num factors$  factor loading matrix which transforms the high dimensional $y_t$ into a lower dimensional $f_t$. 
+- $f_t$ can then be run using a set of univariate time series, e.g. random walks 
+- The $B$ matrix is often hard to estimate and might require some tight priors
+
 ## Summary
+
+- We have seen how to fit basic Bayesian state space models and observed some of their pitfalls
+- We know how to create some simple multivariate time series models
+- We have seen some of the more advanced ideas in time series models such as DLMs and dynamic factor models
+- You are now an expert in Bayesian time series!

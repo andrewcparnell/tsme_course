@@ -107,7 +107,6 @@ model_run = jags(data = model_data,
 print(model_run)
 print(model_run)
 
-
 # Fitted values -----------------------------------------------------------
 
 # Choose the parameters to watch

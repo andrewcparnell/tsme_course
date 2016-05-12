@@ -26,7 +26,7 @@ library(R2jags)
 
 # Likelihood:
 # y_t ~ N(alpha_y + beta_y * x_t, sigma_y) - this is the STATE equation
-# x_t ~ N(x_{t-1}, sigma_x) - this is the EVOLUATION equation
+# x_t ~ N(x_{t-1}, sigma_x) - this is the EVOLUTION equation
 
 # Note that this is not a well-defined model since you can swap the sign of x_t and of beta_y and still get exactly the same model
 # In the below I'm going assume that alpha_y and beta_y are known and part of the data.
@@ -103,14 +103,17 @@ cor(model_run$BUGSoutput$sims.matrix[,1:5]) # - still some very strong correlati
 
 # Plot the latent x variables
 x_mean = apply(model_run$BUGSoutput$sims.list$x,2,'mean')
+par(mfrow=c(2,1))
 plot(1:T,y)
-lines(1:T, x, col='red')
-lines(1:T, x_mean, col='blue')
 legend('topleft',
        legend = c('data', 'truth', 'estimated'),
        lty = c(-1, 1, 1),
        pch = c(1, -1, -1),
-       col = c('black', 'red', 'blue'))
+       col = c('black', 'red', 'blue'),
+       horiz = TRUE)
+plot(1:T, x, col='red', type='l')
+lines(1:T, x_mean, col='blue')
+par(mfrow=c(1,1))
 
 # Real example ------------------------------------------------------------
 

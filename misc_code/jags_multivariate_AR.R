@@ -9,7 +9,6 @@
 rm(list=ls())
 library(R2jags)
 library(MASS) # Used to generate MVN samples
-library(MCMCpack)
 
 # Maths -------------------------------------------------------------------
 
@@ -63,28 +62,26 @@ model
     y[t, ] ~ dmnorm(mu[t, ], Sigma.Inv)
     mu[t, 1:k] <- A + Phi %*% y[t-1,]
   }
+  Sigma.Inv ~ dwish(I, k+1)
+  Sigma <- inverse(Sigma.Inv)  
 
   # Priors
   for(i in 1:k) {
     A[i] ~ dnorm(0, 0.01)
     Phi[i,i] ~ dunif(-1, 1)
-    Sigma.Inv[i,i] <- 1/pow(sigma[i], 2)
     for(j in (i+1):k) {
       Phi[i,j] ~ dunif(-1,1)
       Phi[j,i] ~ dunif(-1,1)
-      Sigma.Inv[i,j] <- 0
-      Sigma.Inv[j,i] <- 0
     }
-    sigma[i] ~ dunif(0, 10)
   }
 }
 '
 
 # Set up the data
-model_data = list(T = T, k = k, y = y)
+model_data = list(T = T, k = k, y = y, I = diag(k))
 
 # Choose the parameters to watch
-model_parameters =  c("A", "Phi", "sigma")
+model_parameters =  c("A", "Phi", "Sigma")
 
 # Run the model
 model_run = jags(data = model_data,
@@ -122,25 +119,27 @@ with(bivariate_data, plot(Year, sea_level_m, type='l'))
 par(mfrow=c(1,1))
 
 # Perhaps run on differences
-par(mfrow=c(2,1))
+par(mfrow=c(3,1))
 with(bivariate_data, plot(Year[-1], diff(Anomaly), type='l'))
 with(bivariate_data, plot(Year[-1], diff(sea_level_m), type='l'))
+with(bivariate_data, plot(diff(Anomaly), diff(sea_level_m)))
 par(mfrow=c(1,1))
 
 # Create the data
 real_data = with(bivariate_data,
                  list(T = nrow(bivariate_data)-1,
                       y = apply(bivariate_data[,c('Anomaly', 'sea_level_m')],2,'diff'),
-                      k = 2))
+                      k = 2,
+                      I = diag(2)))
 
 # Run the model
 real_data_run = jags(data = real_data,
                      parameters.to.save = model_parameters,
                      model.file=textConnection(model_code),
                      n.chains=4,
-                     n.iter=1000,
-                     n.burnin=200,
-                     n.thin=2)
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
 
 # Plot output
 print(real_data_run)
@@ -152,7 +151,8 @@ n_forecast = 10
 real_data_future = with(bivariate_data,
                  list(T = nrow(bivariate_data) + n_forecast - 1,
                       y = rbind(as.matrix(apply(bivariate_data[,c('Anomaly', 'sea_level_m')],2,'diff')), matrix(NA, ncol=2, nrow=n_forecast)),
-                      k = 2))
+                      k = 2,
+                      I = diag(2)))
 
 # Choose the parameters to watch
 model_parameters =  c("y")
@@ -161,29 +161,22 @@ real_data_run_future = jags(data = real_data_future,
                      parameters.to.save = model_parameters,
                      model.file=textConnection(model_code),
                      n.chains=4,
-                     n.iter=1000,
-                     n.burnin=200,
-                     n.thin=2)
+                     n.iter=10000,
+                     n.burnin=2000,
+                     n.thin=8)
 
 plot(real_data_run_future)
 
-y_future_pred = real_data_run_future$BUGSoutput$mean$y
+y_future_pred = real_data_run_future$BUGSoutput$sims.list$y
+y_future_med = apply(y_future_pred,c(2,3),'median')
 year_all = c(bivariate_data$Year[-1],2010:(2010+n_forecast))
 
 # Create plots
 par(mfrow=c(2,1))
-plot(year_all[-1], y_future_pred[,1], col='red', type='l')
-with(bivariate_data, lines(Year, diff(Anomaly)))
-plot(year_all[-1], y_future_pred[,2], col='red', type='l')
-with(bivariate_data, lines(Year, diff(sea_level_m)))
+plot(year_all[-1]-1, bivariate_data$Anomaly[1]+cumsum(y_future_med[,1]), col='red', type='l')
+with(bivariate_data, lines(Year, Anomaly))
+plot(year_all[-1]-1, bivariate_data$sea_level_m[1]+cumsum(y_future_med[,2]), col='red', type='l')
+with(bivariate_data, lines(Year, sea_level_m))
 par(mfrow=c(1,1))
-
-
-
-# Other tasks -------------------------------------------------------------
-
-
-
-# Perhaps exercises, or other general remarks
 
 
