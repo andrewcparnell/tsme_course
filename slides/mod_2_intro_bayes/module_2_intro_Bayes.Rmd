@@ -2,18 +2,17 @@
 title: 'Module 2: Introduction to Bayesian Statistics'
 author: "Andrew Parnell, School of Mathematics and Statistics, University College Dublin"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     logo: http://www.ucd.ie/handball/images/ucd_brandmark_colour.gif
     transition: slower
     widescreen: yes
-  beamer_presentation: default
   slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, dev = 'pdf', fig.align='center', fig.width= 4, fig.height=3)
 ```
-
 
 ## Learning outcomes
 

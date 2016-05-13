@@ -66,11 +66,11 @@ Time  | Class
 
 Time  | Class
 ------------- | ----------------------------------------------------
-9:15-10:00 | Models for continuous time series (AP) [Module 9](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_9_continuous_time_series/module_9_continuous_time_series.html)
+9:15-10:00 | Extensions: state space models and multivariate time series (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides/mod_10_state_space_multivariate/module_10_state_space_multivariate.html)
 10:00-10:45 | Discussion and coffee
-10:45-11:30 | Extensions: state space models and multivariate time series (AP) [Module 10](https://rawgit.com/andrewcparnell/tsme_course/master/slides)
+10:45-11:30 | Practical 4: Bring your own data (AP and DM)
 11:30-12:00 | Break 
-12:00-12:45 | Practical 4: Bring your own data (AP and DM)
+12:00-12:45 | Bring your own data (continued)
 12:45-14:00 | Lunch
 14:00-17:30 | Bring your own data (continued)
 

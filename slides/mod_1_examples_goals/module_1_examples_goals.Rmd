@@ -2,18 +2,22 @@
 title: 'Module 1: Time series for Ecologists and Climatologists: examples & goals'
 author: "Doug McNeall & Andrew Parnell"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     transition: slower
     widescreen: yes
-  beamer_presentation: default
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev = c('pdf'), fig.align = 'center')
+```
 
 ## Learning outcomes
 
 In this lecture we will:  
 
 - Learn some key time series concepts and features
-- Get to see some of the example timeseries that we'll use on the course
+- Get to see some of the example time series that we'll use on the course
 - Understand the types of analysis that we want to do, and why
 - Learn to avoid some common mistakes
 
@@ -67,7 +71,7 @@ What do we use time series methods for? Often, we are trying to do at least one 
 - HadCRUT4 Annual globally averaged surface temperature, from the Met Office Hadley Centre and Climate Research Unit, UEA.
 
 - How do we separate the **structure** (here the long term trend) and the random **noise**?
-```{r plot hadcrut straight, echo=FALSE}
+```{r, echo=FALSE}
 hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
 with(hadcrut,plot(Year,Anomaly))
 # Is there a trend? (this could just be a slice from a random process, right?)
@@ -77,8 +81,7 @@ with(hadcrut,plot(Year,Anomaly))
 
 ## Plot the data
 - Using a line plot gives a slightly different impression.
-```{r plot hadcrut l, echo=FALSE}
-hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
+```{r, echo=FALSE}
 with(hadcrut,plot(Year,Anomaly,type='l'))
 ```
 
@@ -98,13 +101,13 @@ And, **how** does that randomness manifest?
 ## A simpler example? Sea level rise
 - Church and White
 - There appears relatively less noise in this data compared to the trend
-```{r load sea level data, echo=FALSE}
+```{r, echo=FALSE}
 candw = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/church_and_white_global_tide_gauge.csv')
 with(candw,plot(year_AD,sea_level_m,type='l'))
 ```
 
 ## How do we go about it?
-We know there is **randomness** and **uncertainty** in the timeseries. We can use a **statistical** model to help us understand and predict the system. This usually proceeds:
+We know there is **randomness** and **uncertainty** in the time series. We can use a **statistical** model to help us understand and predict the system. This usually proceeds:
 
 1. Model identification and selection
 2. Parameter estimation
@@ -117,19 +120,19 @@ There are a number of **features** of time series and **concepts** that help in 
 ## Periodicity and cycles
 - Time series may show **periodicity** and **cycles** - often seasonal, but perhaps with more complexity.
 
-```{r plot ldeaths, echo=TRUE}
+```{r, echo=TRUE}
 plot(ldeaths)
 ```
 
 ## Changes in variability & Heteroskedasticity
 - This AirPassengers data set shows **heteroskedasticity** - changes in variability.
-```{r plot AirPassengers, echo=TRUE}
+```{r, echo=TRUE}
 plot(AirPassengers)
 ```
 
 ## Example - GISP2 stable isotope ratios in Greenland ice
 - This data shows **heteroskedacity** and **regime changes** and a lot of **structure**
-```{r load gisp2 data, echo=FALSE}
+```{r, echo=FALSE}
 gisp2 = read.table('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/gispd18o_raw.txt', na.strings = '999999')
 colnames(gisp2) = c('Depth','d18o','Age')
 with(gisp2,plot(Age,d18o,type='l'))
@@ -139,7 +142,7 @@ with(gisp2,plot(Age,d18o,type='l'))
 ## Autocorrelation and memory
 - **Autocorrelation** is the correlation of a random process **with itself** at a different time.
 
-```{r plot phi, echo=FALSE}
+```{r, echo=FALSE}
 ar1sim <- function(T=100, sigma=0.5, alpha=0, phi=0.6){
   set.seed(123)
   y = rep(NA,T)
@@ -153,7 +156,7 @@ plot(ar1sim(phi=-0.9),type='l', ylim = c(-3,3))
 ```
 
 ## Smoothing
-- When we smooth a timeseries, we are applying a filter to try and remove some of the randomness, and get at (or remove) the underlying structure.
+- When we smooth a time series, we are applying a filter to try and remove some of the randomness, and get at (or remove) the underlying structure.
 - We are making assumptions, and imposing structure. You have to put something in in order to get something out.
 
 ```{r, echo=FALSE, fig.align='center'}
@@ -163,11 +166,11 @@ lines(hadcrut$Year, hadcrut_smooth, type = 'l', col = 'red')
 ```
 
 ## Stationarity
-- In a **stationary** timeseries **mean**, **variance** and **autocorrelation** structure do not change over time.
+- In a **stationary** time series **mean**, **variance** and **autocorrelation** structure do not change over time.
 - Stationarity is a common assumption in some types of time series analysis.
  
 ## Differencing
-- A timeseries of the differences between the values.
+- A time series of the differences between the values.
 - Differencing can be used used to make a non-stationary trend stationary.
 - First differencing removes a linear trend, $k$th-order differencing removes a polynomial trend of order $k$
 ```{r, echo = FALSE}
@@ -179,7 +182,7 @@ with(hadcrut, plot(diff(Anomaly), type = 'l'))
 ## The Lynx data
 
 This is the ```lynx``` data set, annual numbers of lynx trappings for Canada 1821 - 1934. Regarded as representative of the population.
-```{r plot lynx, echo=TRUE}
+```{r, echo=TRUE}
 plot(lynx)
 ```
 
