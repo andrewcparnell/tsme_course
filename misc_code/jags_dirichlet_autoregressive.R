@@ -68,7 +68,8 @@ model
   for (t in 2:T) {
     y[t, 1:R] ~ ddirch(a[t, 1:R])
     for (r in 1:R) {
-      log(a[t, r]) <- alpha[r] + beta[r] * log(a[t-1, r])
+      a[t, r] <- exp(log_a[t, r])
+      log_a[t, r] <- alpha[r] + beta[r] * y[t-1, r]#log_a[t-1, r]
     }
   }
 
@@ -92,7 +93,7 @@ init_fun = function() {
 
 # Run the model
 model_run = jags(data = model_data,
-                 inits = init_fun,
+                 #inits = init_fun,
                  parameters.to.save = model_parameters,
                  model.file=textConnection(model_code))
 
