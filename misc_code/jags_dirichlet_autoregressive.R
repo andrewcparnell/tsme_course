@@ -39,24 +39,25 @@ t_seq = 1:T
 R = 4
 alpha = rep(1, R)
 beta = runif(R, 0.2, 0.8)
-y = a =  matrix(NA, nrow = T, ncol = 4)
-a[1,] = exp(alpha)
-y[1,] = rdirichlet(a[1,])
+sigma_a = runif(R, 0.1, 0.3)
+y = log_a =  matrix(NA, nrow = T, ncol = 4)
+log_a[1,] = 0
+y[1,] = rdirichlet(exp(log_a[1,]))
 for(t in 2:T) {
-  for(r in 1:R) a[t,r] = exp( alpha[r] + beta[r] * log(a[t-1, r]))
-  y[t,] = rdirichlet(a[t,])
+  for(r in 1:R) log_a[t,r] = rnorm(1, alpha[r] + beta[r] * log_a[t-1, r],
+                                   sigma_a[r])
+  y[t,] = rdirichlet(exp(log_a[t,]))
 }
 # plot
 plot(t_seq,y[,1],type='l', ylim = c(0, 1))
-lines(t_seq,y[,2])
-lines(t_seq,y[,3])
-lines(t_seq,y[,4])
+lines(t_seq,y[,2], col = 2)
+lines(t_seq,y[,3], col = 3)
+lines(t_seq,y[,4], col = 4)
 
 # Jags code ---------------------------------------------------------------
 
 # Jags code to fit the model to the simulated data
 # This code is for a general AR(p) model
-
 model_code = '
 model
 {
@@ -69,14 +70,22 @@ model
     y[t, 1:R] ~ ddirch(a[t, 1:R])
     for (r in 1:R) {
       a[t, r] <- exp(log_a[t, r])
-      log_a[t, r] <- alpha[r] + beta[r] * y[t-1, r]#log_a[t-1, r]
+      log_a[t, r] ~ dnorm(alpha[r] + beta[r] * log_a[t-1, r], sigma_a[r])
+    }
+  }
+
+  for(t in 1:T) {
+    for(r in 1:R) {
+      mean_a[t,r] = a[t, r] / sum(a[t, 1:R])
     }
   }
 
   # Priors
   for (r in 1:R) {
+    log_a[1, r] ~ dnorm(alpha[r], sigma_a[r])
     alpha[r] ~ dnorm(0, 10^-2)
     beta[r] ~ dnorm(0, 10^-2)
+    sigma_a[r] ~ dunif(0, 100)
   }
 }
 '
@@ -85,87 +94,48 @@ model
 model_data = list(T = T, R = R, y = y)
 
 # Choose the parameters to watch
-model_parameters =  c("alpha","beta","a")
-
-init_fun = function() {
-  list('alpha' = rep(1, R), 'beta' = rep(0, R))
-}
+model_parameters =  c("alpha","beta","mean_a")
 
 # Run the model
 model_run = jags(data = model_data,
-                 #inits = init_fun,
                  parameters.to.save = model_parameters,
-                 model.file=textConnection(model_code))
+                 model.file=textConnection(model_code),
+                 n.iter = 10000,
+                 n.burnin = 2000,
+                 n.thin = 8)
 
 # Simulated results -------------------------------------------------------
 
 # Check the output - are the true values inside the 95% CI?
 # Also look at the R-hat values - they need to be close to 1 if convergence has been achieved
 print(model_run)
-print(model_run_2) # Note: phi is correct but in the wrong order
 
-# Real example ------------------------------------------------------------
+# Look at alpha
+par(mfrow=c(2, 2))
+hist(model_run$BUGSoutput$sims.list$alpha[,1])
+hist(model_run$BUGSoutput$sims.list$alpha[,2])
+hist(model_run$BUGSoutput$sims.list$alpha[,3])
+hist(model_run$BUGSoutput$sims.list$alpha[,4])
 
-# Data wrangling and jags code to run the model on a real data set in the data directory
-hadcrut = read.csv('https://raw.githubusercontent.com/andrewcparnell/tsme_course/master/data/hadcrut.csv')
-head(hadcrut)
-with(hadcrut,plot(Year,Anomaly,type='l'))
+par(mfrow=c(2, 2))
+hist(model_run$BUGSoutput$sims.list$beta[,1])
+hist(model_run$BUGSoutput$sims.list$beta[,2])
+hist(model_run$BUGSoutput$sims.list$beta[,3])
+hist(model_run$BUGSoutput$sims.list$beta[,4])
 
-# Look at the ACF/PACF
-acf(hadcrut$Anomaly)
-pacf(hadcrut$Anomaly)
+# Get the mean over time
+post_mean_a = model_run$BUGSoutput$sims.list$mean_a
+post_mean_a_mean = apply(post_mean_a, c(2, 3), 'mean')
 
-# Set up the data
-real_data = with(hadcrut,
-                 list(T = nrow(hadcrut),
-                      y = hadcrut$Anomaly,
-                      p = 1))
+# plot
+par(mfrow=c(2, 2))
+plot(t_seq,y[,1],type='l', ylim = c(0, 1))
+lines(t_seq, post_mean_a_mean[,1], lty = 'dotted')
+plot(t_seq,y[,2],type='l', ylim = c(0, 1), col = 2)
+lines(t_seq, post_mean_a_mean[,2], lty = 'dotted', col = 2)
+plot(t_seq,y[,3],type='l', ylim = c(0, 1), col = 2)
+lines(t_seq, post_mean_a_mean[,3], lty = 'dotted', col = 3)
+plot(t_seq,y[,4],type='l', ylim = c(0, 1), col = 2)
+lines(t_seq, post_mean_a_mean[,4], lty = 'dotted', col = 4)
 
-# Run the model
-real_data_run = jags(data = real_data,
-                     parameters.to.save = model_parameters,
-                     model.file=textConnection(model_code),
-                     n.chains=4,
-                     n.iter=1000,
-                     n.burnin=200,
-                     n.thin=2)
 
-# Plot output
-print(real_data_run) # Very high degree of autocorrelation
-
-# Plot some of the fitted values (also known as one-step-ahead predictions)
-post = print(real_data_run)
-alpha_mean = post$mean$alpha
-phi_mean = post$mean$phi
-
-# Create fitted values
-fitted_values = alpha_mean + phi_mean * real_data$y[1:(nrow(hadcrut)-1)]
-
-# Create fitted line
-with(hadcrut, plot(Year, Anomaly, type='l'))
-with(hadcrut, lines(Year[2:nrow(hadcrut)], fitted_values, col='red'))
-# Why does this look strange?
-
-# Create some predictions off into the future
-T_future = 2050
-future_values = rep(NA, T_future-max(hadcrut$Year))
-future_values[1] = alpha_mean + phi_mean * real_data$y[nrow(hadcrut)]
-for (i in 2:length(future_values)) {
-  future_values[i] = alpha_mean + phi_mean * future_values[i-1]
-}
-
-# Plot these all together
-with(hadcrut,
-     plot(Year,
-          Anomaly,
-          type='l',
-          xlim=c(min(hadcrut$Year),T_future),
-          ylim=range(c(hadcrut$Anomaly,future_values))))
-lines(((max(hadcrut$Year)+1):T_future),future_values,col='red')
-# See - no global warming!
-
-# Other tasks -------------------------------------------------------------
-
-# 1) Try changing the values of phi2 for the simulated AR(p) model. What happens to the time series when some of these values get bigger?
-# 2) Above we have only fitted the HadCrut data with an AR(1) model. You might like to try and fit it with AR(2), AR(3), etc models and see what happens to the fits
-# 3) (Harder) See if you can create the fitted values by sampling from the posterior distribution of alpha and phi, and plotting an envelope/ensemble of lines, just like in the linear regression example
